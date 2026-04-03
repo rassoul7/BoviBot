@@ -363,3 +363,4 @@ INSERT INTO alimentation (animal_id, type_aliment, quantite_kg, date_alimentatio
 (2, 'Foin', 7.0, '2026-03-01', 150),
 (5, 'Concentre', 5.0, '2026-03-01', 350),
 (6, 'Lait maternel', 3.0, '2026-03-01', 0);
+
