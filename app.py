@@ -10,7 +10,6 @@ from pydantic import BaseModel
 from typing import Optional
 import mysql.connector
 import os, re, json, httpx, hashlib, secrets
-from datetime import date
 from dotenv import load_dotenv 
 
 load_dotenv()

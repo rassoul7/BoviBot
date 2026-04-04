@@ -4,1468 +4,777 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BoviBot — Plateforme d'Élevage</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,300&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-:root {
-  --forest:  #1A3A2A;
-  --fern:    #2D5A40;
-  --leaf:    #4A8C5C;
-  --sage:    #7DB891;
-  --mint:    #C3E8CC;
-  --fog:     #EEF5F0;
-  --gold:    #C8860A;
-  --amber:   #F0A832;
-  --straw:   #FCEABB;
-  --soil:    #2C1E14;
-  --bark:    #5C3D2E;
-  --clay:    #8C6348;
-  --rust:    #C0392B;
-  --rust-l:  #FDECEA;
-  --warn:    #E67E22;
-  --warn-l:  #FEF3E2;
-  --info:    #2980B9;
-  --info-l:  #EBF5FB;
-  --white:   #FFFFFF;
-  --offwhite:#F8F6F2;
-  --bg:      #F2EFE9;
-  --border:  rgba(44,30,20,.1);
-  --text:    #1E140A;
-  --muted:   #7A6A5A;
-  --sh-sm:   0 1px 3px rgba(30,20,10,.08);
-  --sh-md:   0 4px 16px rgba(30,20,10,.1);
-  --sh-lg:   0 12px 40px rgba(30,20,10,.15);
-  --r:       12px;
-  --r-sm:    8px;
+:root{
+  --ink:#18120A;--bark:#3A1F0D;--clay:#7B4A28;--terra:#C0511F;--terra-l:#FAE8DF;
+  --forest:#183322;--fern:#245C38;--sage:#4D8C62;--mint:#A8D4B4;--fog:#E8F4EC;
+  --gold:#C27D0A;--amber:#E89C18;--straw:#F8E090;--parch:#F9F4E8;--cream:#FDFAF3;
+  --bg:#EDE8DC;--white:#fff;
+  --rust:#B02B1A;--rust-l:#FDECEA;--warn:#C96B06;--warn-l:#FEF0DC;--sky:#1A5F96;--sky-l:#E0EDFA;
+  --border:rgba(24,18,10,.09);--muted:#8C7A62;
+  --sh:0 2px 8px rgba(24,18,10,.08);--sh-md:0 6px 24px rgba(24,18,10,.12);--sh-lg:0 16px 48px rgba(24,18,10,.16);
+  --r:14px;--r-sm:9px;--r-xs:6px;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;overflow-x:hidden}
 
-/* ─── AUTH PAGES ──────────────────────────────────────── */
-#auth-screen {
-  min-height: 100vh;
-  display: flex;
-  background: var(--forest);
-  position: relative;
-  overflow: hidden;
-}
-#auth-screen::before {
-  content: '';
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse 60% 70% at 20% 50%, rgba(74,140,92,.25) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 80% 20%, rgba(200,134,10,.15) 0%, transparent 50%);
-}
-.auth-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 4rem;
-  position: relative;
-  z-index: 1;
-}
-.auth-left-brand {
-  display: flex; align-items: center; gap: 1rem;
-  margin-bottom: 3rem;
-}
-.auth-logo {
-  width: 56px; height: 56px;
-  background: var(--gold);
-  border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.8rem;
-}
-.auth-left-brand h1 {
-  font-family: 'Fraunces', serif;
-  font-size: 2rem; color: var(--straw); font-weight: 700;
-}
-.auth-left-brand small { font-size: .8rem; color: rgba(255,255,255,.4); display: block; margin-top: 2px; }
-.auth-hero-text h2 {
-  font-family: 'Fraunces', serif;
-  font-size: 2.8rem; color: white;
-  font-weight: 300; line-height: 1.3;
-  margin-bottom: 1rem;
-}
-.auth-hero-text h2 em { color: var(--amber); font-style: italic; }
-.auth-hero-text p { color: rgba(255,255,255,.5); font-size: .95rem; line-height: 1.7; max-width: 420px; }
-.auth-features { margin-top: 2.5rem; display: flex; flex-direction: column; gap: .7rem; }
-.auth-feat {
-  display: flex; align-items: center; gap: .8rem;
-  color: rgba(255,255,255,.65); font-size: .85rem;
-}
-.auth-feat-icon {
-  width: 32px; height: 32px;
-  background: rgba(255,255,255,.08);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: .9rem; flex-shrink: 0;
-}
-.auth-right {
-  width: 480px;
-  background: var(--offwhite);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 3rem 3rem;
-  position: relative;
-  z-index: 1;
-}
-.auth-tabs { display: flex; gap: .5rem; margin-bottom: 2rem; }
-.auth-tab {
-  flex: 1; padding: .6rem; text-align: center;
-  border: none; background: none; cursor: pointer;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: .9rem; font-weight: 600;
-  color: var(--muted);
-  border-bottom: 2px solid transparent;
-  transition: all .2s;
-}
-.auth-tab.active { color: var(--forest); border-bottom-color: var(--gold); }
-.auth-form-title {
-  font-family: 'Fraunces', serif;
-  font-size: 1.6rem; font-weight: 600;
-  color: var(--soil); margin-bottom: .4rem;
-}
-.auth-form-sub { font-size: .83rem; color: var(--muted); margin-bottom: 1.5rem; }
-.form-group { margin-bottom: 1rem; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
-label { display: block; font-size: .78rem; font-weight: 600; color: var(--bark); margin-bottom: .35rem; text-transform: uppercase; letter-spacing: .4px; }
-input[type=text], input[type=email], input[type=password], input[type=date],
-input[type=number], select, textarea {
-  width: 100%;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r-sm);
-  padding: .6rem .9rem;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: .875rem;
-  background: white;
-  color: var(--text);
-  outline: none;
-  transition: border-color .15s;
-}
-input:focus, select:focus, textarea:focus { border-color: var(--leaf); }
-textarea { resize: vertical; min-height: 80px; }
-.btn {
-  padding: .65rem 1.4rem;
-  border: none; border-radius: var(--r-sm);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: .875rem; font-weight: 600;
-  cursor: pointer; transition: all .15s;
-  display: inline-flex; align-items: center; gap: .4rem;
-}
-.btn-primary { background: var(--forest); color: white; }
-.btn-primary:hover { background: var(--fern); }
-.btn-full { width: 100%; justify-content: center; padding: .75rem; }
-.btn-gold { background: var(--gold); color: white; }
-.btn-gold:hover { background: #a8700a; }
-.btn-danger { background: var(--rust); color: white; }
-.btn-ghost { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
-.btn-ghost:hover { background: var(--fog); color: var(--text); }
-.btn-sm { padding: .4rem .8rem; font-size: .78rem; }
-.auth-error { background: var(--rust-l); color: var(--rust); padding: .6rem .9rem; border-radius: var(--r-sm); font-size: .82rem; margin-bottom: 1rem; display: none; }
+/* ─── SCROLLBARS ─────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--terra-m, #E0BBA0);border-radius:4px}
 
-/* ─── APP LAYOUT ──────────────────────────────────────── */
-#app-screen { display: none; height: 100vh; }
-.app-layout { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+/* ─── AUTH ────────────────────────────────── */
+#auth-screen{min-height:100vh;display:flex;background:var(--forest);position:relative;overflow:hidden}
+.auth-bg-circles{position:absolute;inset:0;pointer-events:none}
+.auth-bg-circles span{position:absolute;border-radius:50%;background:rgba(255,255,255,.02)}
+.auth-bg-circles span:nth-child(1){width:600px;height:600px;top:-200px;left:-200px}
+.auth-bg-circles span:nth-child(2){width:400px;height:400px;bottom:-100px;right:-100px;background:rgba(200,125,10,.06)}
+.auth-bg-circles span:nth-child(3){width:200px;height:200px;top:40%;right:30%;background:rgba(255,255,255,.015)}
+.auth-left{flex:1;display:flex;flex-direction:column;justify-content:center;padding:4rem 3rem 4rem 5rem;position:relative;z-index:1}
+.auth-brand{display:flex;align-items:center;gap:1rem;margin-bottom:4rem}
+.auth-brand-logo{width:54px;height:54px;background:linear-gradient(135deg,var(--amber),var(--gold));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;box-shadow:0 4px 20px rgba(200,125,10,.35)}
+.auth-brand h1{font-family:'Lora',serif;font-size:2rem;color:var(--straw);font-weight:700}
+.auth-brand small{display:block;font-size:.68rem;color:rgba(255,255,255,.3);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.auth-hero{font-family:'Lora',serif;font-size:3rem;color:white;font-weight:600;line-height:1.2;margin-bottom:1.4rem;letter-spacing:-.02em}
+.auth-hero em{color:var(--amber);font-style:italic}
+.auth-sub{color:rgba(255,255,255,.48);font-size:1rem;line-height:1.8;max-width:460px}
+.auth-badges{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:2rem}
+.auth-badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:.4rem .9rem;font-size:.78rem;color:rgba(255,255,255,.7);font-weight:500}
+.auth-badge-ico{font-size:.85rem}
+.auth-quote{margin-top:3rem;padding:1.3rem 1.6rem;border-left:3px solid rgba(200,125,10,.5);background:rgba(255,255,255,.03);border-radius:0 var(--r-sm) var(--r-sm) 0}
+.auth-quote p{font-family:'Lora',serif;font-style:italic;color:rgba(255,255,255,.5);font-size:.9rem;line-height:1.7}
+.auth-quote cite{display:block;margin-top:.4rem;font-size:.7rem;color:rgba(255,255,255,.25);font-style:normal;text-transform:uppercase;letter-spacing:.5px}
+.auth-right{width:480px;background:var(--cream);display:flex;flex-direction:column;justify-content:center;padding:3.5rem;position:relative;z-index:1;box-shadow:-20px 0 60px rgba(0,0,0,.15)}
+.auth-tabs{display:flex;background:var(--parch);border-radius:11px;padding:4px;margin-bottom:2.5rem;border:1px solid var(--border)}
+.auth-tab{flex:1;padding:.58rem;text-align:center;border:none;background:transparent;cursor:pointer;font-family:'Outfit',sans-serif;font-size:.875rem;font-weight:600;color:var(--muted);border-radius:8px;transition:all .22s}
+.auth-tab.active{background:white;color:var(--forest);box-shadow:var(--sh)}
+.auth-ttl{font-family:'Lora',serif;font-size:1.75rem;color:var(--ink);font-weight:700;margin-bottom:.3rem;letter-spacing:-.01em}
+.auth-desc{font-size:.84rem;color:var(--muted);margin-bottom:2rem}
+.auth-err{background:var(--rust-l);color:var(--rust);padding:.7rem 1rem;border-radius:var(--r-sm);font-size:.82rem;margin-bottom:1.2rem;display:none;border-left:3px solid var(--rust);font-weight:500}
 
-/* ─── SIDEBAR ─────────────────────────────────────────── */
-.sidebar {
-  background: var(--forest);
-  display: flex; flex-direction: column;
-  overflow: hidden;
-  height: 100vh;
-  position: sticky; top: 0;
-}
-.sb-brand {
-  padding: 1.4rem 1.2rem 1rem;
-  display: flex; align-items: center; gap: .8rem;
-  border-bottom: 1px solid rgba(255,255,255,.07);
-}
-.sb-logo {
-  width: 38px; height: 38px;
-  background: var(--gold);
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.2rem; flex-shrink: 0;
-}
-.sb-name { font-family: 'Fraunces', serif; font-size: 1.1rem; color: var(--straw); font-weight: 600; }
-.sb-tagline { font-size: .65rem; color: rgba(255,255,255,.3); margin-top: 1px; }
-.sb-user {
-  margin: .8rem;
-  background: rgba(255,255,255,.06);
-  border-radius: 9px;
-  padding: .65rem .8rem;
-  display: flex; align-items: center; gap: .7rem;
-}
-.sb-avatar {
-  width: 34px; height: 34px;
-  background: var(--leaf);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: .75rem; font-weight: 700; color: white;
-  flex-shrink: 0;
-}
-.sb-user-name { font-size: .82rem; font-weight: 600; color: rgba(255,255,255,.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sb-user-role { font-size: .65rem; color: rgba(255,255,255,.35); }
-.sb-section { padding: .8rem 1.2rem .3rem; font-size: .62rem; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,.2); font-weight: 600; }
-.nav-item {
-  display: flex; align-items: center; gap: .75rem;
-  padding: .55rem 1.2rem;
-  color: rgba(255,255,255,.5);
-  font-size: .855rem; font-weight: 500;
-  cursor: pointer; transition: all .15s;
-  border-left: 3px solid transparent;
-  user-select: none;
-}
-.nav-item:hover { color: rgba(255,255,255,.85); background: rgba(255,255,255,.05); }
-.nav-item.active { color: var(--straw); background: rgba(200,134,10,.15); border-left-color: var(--gold); }
-.nav-icon { font-size: .95rem; width: 18px; text-align: center; flex-shrink: 0; }
-.nav-badge {
-  margin-left: auto;
-  background: var(--rust);
-  color: white; font-size: .6rem; font-weight: 700;
-  min-width: 17px; height: 17px;
-  border-radius: 10px; padding: 0 4px;
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.sb-footer {
-  margin-top: auto;
-  padding: .8rem 1.2rem;
-  border-top: 1px solid rgba(255,255,255,.07);
-  display: flex; gap: .5rem;
-}
-.sb-footer-btn {
-  flex: 1; padding: .45rem;
-  background: rgba(255,255,255,.06);
-  border: none; border-radius: 7px;
-  color: rgba(255,255,255,.45); font-size: .75rem;
-  cursor: pointer; transition: all .15s;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  display: flex; align-items: center; justify-content: center; gap: .3rem;
-}
-.sb-footer-btn:hover { background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
+/* ─── FORM ELEMENTS ───────────────────────── */
+.form-group{margin-bottom:1.1rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+label{display:block;font-size:.7rem;font-weight:700;color:var(--clay);margin-bottom:.38rem;text-transform:uppercase;letter-spacing:.8px}
+input,select,textarea{width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);padding:.65rem 1rem;font-family:'Outfit',sans-serif;font-size:.875rem;background:var(--parch);color:var(--ink);outline:none;transition:all .2s;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--sage);background:white;box-shadow:0 0 0 3px rgba(77,140,98,.1)}
+input::placeholder{color:var(--muted);opacity:.55}
+textarea{resize:vertical;min-height:80px}
 
-/* ─── TOPBAR ──────────────────────────────────────────── */
-.topbar {
-  background: var(--offwhite);
-  border-bottom: 1px solid var(--border);
-  padding: .8rem 1.8rem;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 50;
-  box-shadow: var(--sh-sm);
-}
-.topbar-title { font-family: 'Fraunces', serif; font-size: 1.15rem; color: var(--soil); font-weight: 600; }
-.topbar-sub { font-size: .75rem; color: var(--muted); margin-top: 1px; }
-.topbar-right { display: flex; align-items: center; gap: .7rem; }
-.pill {
-  display: inline-flex; align-items: center; gap: .4rem;
-  background: var(--fog); border: 1px solid rgba(74,140,92,.2);
-  border-radius: 20px; padding: .3rem .8rem;
-  font-size: .73rem; color: var(--fern); font-weight: 500;
-}
-.dot { width: 6px; height: 6px; background: var(--leaf); border-radius: 50%; animation: blink 2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+/* ─── BUTTONS ─────────────────────────────── */
+.btn{padding:.65rem 1.4rem;border:none;border-radius:var(--r-sm);font-family:'Outfit',sans-serif;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;letter-spacing:.01em}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--forest);color:white}
+.btn-primary:hover{background:var(--fern);transform:translateY(-1px);box-shadow:0 4px 12px rgba(24,51,34,.3)}
+.btn-full{width:100%;padding:.78rem}
+.btn-gold{background:linear-gradient(135deg,var(--amber),var(--gold));color:white}
+.btn-gold:hover{box-shadow:0 4px 14px rgba(200,125,10,.35);transform:translateY(-1px)}
+.btn-danger{background:var(--rust);color:white}
+.btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.btn-ghost:hover{background:var(--parch);color:var(--ink)}
+.btn-sm{padding:.38rem .85rem;font-size:.78rem}
+.btn-xs{padding:.28rem .65rem;font-size:.72rem}
+.btn-icon{width:32px;height:32px;padding:0;border-radius:var(--r-xs)}
 
-/* ─── MAIN ────────────────────────────────────────────── */
-.main-content { overflow-y: auto; height: calc(100vh - 56px); }
-.page-content { padding: 1.6rem 1.8rem; }
+/* ─── APP ─────────────────────────────────── */
+#app-screen{display:none;height:100vh}
+.app{display:grid;grid-template-columns:260px 1fr;height:100vh}
 
-/* ─── CARDS ───────────────────────────────────────────── */
-.card {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  box-shadow: var(--sh-sm);
-}
-.card-head {
-  padding: .9rem 1.2rem;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-}
-.card-title { font-family: 'Fraunces', serif; font-size: .95rem; color: var(--soil); font-weight: 600; display: flex; align-items: center; gap: .5rem; }
-.card-body { padding: 1rem 1.2rem; }
+/* ─── SIDEBAR ─────────────────────────────── */
+.sb{background:var(--forest);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow:hidden}
+.sb-top{padding:1.4rem 1.2rem 1rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:.85rem}
+.sb-logo{width:38px;height:38px;background:linear-gradient(135deg,var(--amber),var(--gold));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.sb-brand-name{font-family:'Lora',serif;font-size:1.1rem;color:var(--straw);font-weight:700}
+.sb-brand-sub{font-size:.6rem;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:1px;margin-top:1px}
+.sb-user{margin:.8rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.06);border-radius:11px;padding:.65rem .85rem;display:flex;align-items:center;gap:.7rem;cursor:pointer;transition:background .2s}
+.sb-user:hover{background:rgba(255,255,255,.09)}
+.sb-av{width:34px;height:34px;background:var(--sage);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:.8rem;font-weight:700;color:white;flex-shrink:0}
+.sb-uname{font-size:.82rem;font-weight:600;color:rgba(255,255,255,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-urole{font-size:.63rem;color:rgba(255,255,255,.32);margin-top:1px}
+.sb-section{padding:.9rem 1.2rem .25rem;font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.2);font-weight:700}
+.nav{display:flex;flex-direction:column;gap:2px;padding:0 .6rem}
+.ni{display:flex;align-items:center;gap:.7rem;padding:.55rem .85rem;color:rgba(255,255,255,.5);font-size:.835rem;font-weight:500;cursor:pointer;transition:all .18s;border-radius:9px;border-left:3px solid transparent}
+.ni:hover{color:rgba(255,255,255,.88);background:rgba(255,255,255,.06)}
+.ni.active{color:var(--straw);background:rgba(200,125,10,.14);border-left-color:var(--amber);font-weight:600}
+.ni-ico{font-size:.95rem;width:18px;text-align:center;flex-shrink:0}
+.ni-badge{margin-left:auto;background:var(--rust);color:white;font-size:.58rem;font-weight:700;min-width:17px;height:17px;border-radius:9px;padding:0 4px;display:inline-flex;align-items:center;justify-content:center}
+/* Conseil */
+.sb-conseil{margin:.8rem;background:rgba(200,125,10,.08);border:1px solid rgba(200,125,10,.18);border-radius:11px;padding:.9rem 1rem}
+.sb-conseil-hd{font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--amber);font-weight:700;margin-bottom:.45rem;display:flex;align-items:center;gap:.4rem}
+.sb-conseil p{font-family:'Lora',serif;font-style:italic;font-size:.77rem;color:rgba(255,255,255,.55);line-height:1.55}
+.sb-conseil-src{font-size:.62rem;color:rgba(255,255,255,.22);margin-top:.35rem}
+.sb-foot{margin-top:auto;padding:.8rem;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:.4rem}
+.sb-footbtn{flex:1;padding:.48rem;background:rgba(255,255,255,.05);border:none;border-radius:8px;color:rgba(255,255,255,.38);font-size:.73rem;font-weight:600;cursor:pointer;transition:all .18s;font-family:'Outfit',sans-serif;display:flex;align-items:center;justify-content:center;gap:.35rem}
+.sb-footbtn:hover{background:rgba(255,255,255,.1);color:rgba(255,255,255,.78)}
 
-/* ─── STATS ───────────────────────────────────────────── */
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.3rem; }
-.stat-card {
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 1rem 1.2rem;
-  display: flex; align-items: center; gap: .9rem;
-  box-shadow: var(--sh-sm);
-  transition: transform .15s, box-shadow .15s;
-}
-.stat-card:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
-.stat-ico { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-.ico-green { background: var(--fog); }
-.ico-gold  { background: #FEF7E6; }
-.ico-rust  { background: var(--rust-l); }
-.ico-blue  { background: var(--info-l); }
-.stat-val { font-family: 'Fraunces', serif; font-size: 1.7rem; line-height: 1; color: var(--soil); }
-.stat-val.danger { color: var(--rust); }
-.stat-lbl { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+/* ─── TOPBAR ──────────────────────────────── */
+.topbar{background:var(--cream);border-bottom:1px solid var(--border);padding:.8rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:var(--sh)}
+.topbar-l{}
+.topbar-title{font-family:'Lora',serif;font-size:1.2rem;color:var(--ink);font-weight:700;letter-spacing:-.01em}
+.topbar-sub{font-size:.73rem;color:var(--muted);margin-top:1px}
+.topbar-r{display:flex;align-items:center;gap:.7rem}
+.live-pill{display:inline-flex;align-items:center;gap:.4rem;background:var(--fog);border:1px solid var(--mint);border-radius:20px;padding:.3rem .85rem;font-size:.72rem;color:var(--fern);font-weight:600}
+.live-dot{width:7px;height:7px;background:var(--sage);border-radius:50%;animation:lv 2s infinite}
+@keyframes lv{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
 
-/* ─── TWO PANEL ROW ───────────────────────────────────── */
-.two-col { display: grid; grid-template-columns: 1fr 1.6fr; gap: 1rem; }
-.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+/* ─── MAIN ────────────────────────────────── */
+.main{overflow-y:auto;height:calc(100vh - 57px);background:var(--bg)}
+.pg{display:none}
+.pg.active{display:block;animation:pgIn .28s ease both}
+#pg-chat.active{display:flex;flex-direction:column}
+@keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.wrap{padding:1.8rem 2rem}
 
-/* ─── ALERTES ─────────────────────────────────────────── */
-.alert-item {
-  display: flex; align-items: flex-start; gap: .6rem;
-  padding: .55rem .7rem; border-radius: 7px;
-  margin-bottom: .35rem; font-size: .8rem; line-height: 1.4;
-  border-left: 3px solid transparent;
-}
-.alert-item.critical { background: var(--rust-l); border-color: var(--rust); }
-.alert-item.warning  { background: var(--warn-l); border-color: var(--warn); }
-.alert-item.info     { background: var(--info-l); border-color: var(--info); }
-.alert-tag { font-family: 'JetBrains Mono', monospace; font-size: .68rem; font-weight: 500; color: var(--muted); flex-shrink: 0; }
-.alert-msg { flex: 1; color: var(--soil); }
-.alert-ck { background: none; border: none; cursor: pointer; opacity: .35; transition: opacity .15s; font-size: .85rem; padding: 0; }
-.alert-ck:hover { opacity: 1; }
+/* ─── DASHBOARD GREETING ──────────────────── */
+.dash-hero{background:linear-gradient(140deg,var(--forest) 0%,#2C5C3F 55%,#1A4A30 100%);border-radius:var(--r);padding:1.8rem 2rem;margin-bottom:1.3rem;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between}
+.dash-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(200,125,10,.15) 0%,transparent 70%);border-radius:50%}
+.dash-hero-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:.28rem .9rem;font-size:.68rem;font-weight:700;color:var(--straw);margin-bottom:.8rem;letter-spacing:.5px;text-transform:uppercase}
+.dash-hero h2{font-family:'Lora',serif;font-size:1.45rem;color:white;font-weight:700;margin-bottom:.4rem}
+.dash-hero p{font-size:.82rem;color:rgba(255,255,255,.55)}
+.dash-hero-cow{font-size:5rem;opacity:.15;position:absolute;right:2rem;bottom:-1rem;line-height:1}
 
-/* ─── TABLE ───────────────────────────────────────────── */
-.tbl-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-thead th {
-  background: var(--offwhite); color: var(--muted);
-  font-size: .68rem; text-transform: uppercase; letter-spacing: .5px;
-  padding: .55rem .9rem; text-align: left;
-  border-bottom: 1px solid var(--border); font-weight: 600;
-}
-tbody td { padding: .55rem .9rem; border-bottom: 1px solid rgba(44,30,20,.04); color: var(--text); }
-tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: var(--offwhite); }
-.mono { font-family: 'JetBrains Mono', monospace; font-size: .75rem; }
-.tag-chip {
-  display: inline-block;
-  background: var(--fog); color: var(--fern);
-  border: 1px solid rgba(45,90,64,.15);
-  padding: 1px 7px; border-radius: 5px;
-  font-family: 'JetBrains Mono', monospace; font-size: .73rem; font-weight: 500;
-}
+/* ─── QUICK ACTIONS ───────────────────────── */
+.quick-actions{display:flex;gap:.6rem;margin-top:1rem}
+.qa{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:.35rem .9rem;font-size:.75rem;font-weight:600;color:rgba(255,255,255,.85);cursor:pointer;transition:all .18s;font-family:'Outfit',sans-serif}
+.qa:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
 
-/* ─── STATUS BADGES ───────────────────────────────────── */
-.badge {
-  display: inline-block; padding: 2px 9px; border-radius: 20px;
-  font-size: .68rem; font-weight: 600; white-space: nowrap;
-}
-.badge-actif      { background: var(--fog); color: var(--fern); }
-.badge-vendu      { background: #FEF7E6; color: var(--gold); }
-.badge-mort       { background: #F5F5F5; color: #999; }
-.badge-quarantaine{ background: var(--rust-l); color: var(--rust); }
-.badge-M          { background: var(--info-l); color: var(--info); }
-.badge-F          { background: #FEF0F8; color: #9B4680; }
-.badge-critical   { background: var(--rust-l); color: var(--rust); }
-.badge-warning    { background: var(--warn-l); color: var(--warn); }
-.badge-info       { background: var(--info-l); color: var(--info); }
+/* ─── STAT CARDS ──────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.3rem}
+.sc{background:white;border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.2rem;display:flex;align-items:center;gap:.9rem;box-shadow:var(--sh);transition:transform .18s,box-shadow .18s;position:relative;overflow:hidden;cursor:default}
+.sc::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%}
+.sc.green::after{background:var(--sage)}.sc.gold::after{background:var(--amber)}.sc.rust::after{background:var(--rust)}.sc.sky::after{background:var(--sky)}
+.sc:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
+.sc-ico{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.ico-g{background:var(--fog)}.ico-o{background:#FEF7E6}.ico-r{background:var(--rust-l)}.ico-s{background:var(--sky-l)}
+.sc-val{font-family:'Lora',serif;font-size:1.8rem;line-height:1;color:var(--ink);font-weight:700;letter-spacing:-.02em}
+.sc-val.danger{color:var(--rust)}
+.sc-lbl{font-size:.67rem;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.sc-trend{position:absolute;top:.7rem;right:.9rem;font-size:.65rem;font-weight:700;color:var(--sage)}
 
-/* ─── MODAL ───────────────────────────────────────────── */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(26,58,42,.65);
-  backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 1000; padding: 1rem;
-  display: none;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: white;
-  border-radius: var(--r);
-  width: 100%; max-width: 560px;
-  max-height: 90vh; overflow-y: auto;
-  box-shadow: var(--sh-lg);
-  animation: slideUp .2s ease;
-}
-@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
-.modal-head {
-  padding: 1.2rem 1.4rem 1rem;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; background: white; z-index: 1;
-}
-.modal-title { font-family: 'Fraunces', serif; font-size: 1.1rem; color: var(--soil); }
-.modal-close { background: none; border: none; cursor: pointer; font-size: 1.3rem; color: var(--muted); line-height: 1; padding: .2rem; }
-.modal-close:hover { color: var(--rust); }
-.modal-body { padding: 1.2rem 1.4rem; }
-.modal-footer { padding: .9rem 1.4rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: .6rem; }
-.form-section { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--muted); margin: 1.1rem 0 .6rem; padding-bottom: .3rem; border-bottom: 1px solid var(--border); }
+/* ─── CHARTS ROW ──────────────────────────── */
+.charts-row{display:grid;grid-template-columns:1fr 1.5fr;gap:1.1rem;margin-bottom:1.2rem}
+.chart-card{background:white;border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.3rem;box-shadow:var(--sh)}
+.chart-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.chart-title{font-family:'Lora',serif;font-size:.92rem;color:var(--ink);font-weight:700}
+.chart-sub{font-size:.68rem;color:var(--muted);margin-top:1px}
+canvas{max-height:180px}
 
-/* ─── CHAT ────────────────────────────────────────────── */
-.chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 56px); }
-.chat-top {
-  padding: .8rem 1.4rem;
-  background: white; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-}
-.chat-top h3 { font-family: 'Fraunces', serif; font-size: 1rem; color: var(--soil); }
-.model-chip {
-  font-size: .65rem; background: var(--fog);
-  color: var(--fern); border: 1px solid rgba(74,140,92,.2);
-  padding: 2px 8px; border-radius: 20px;
-  font-family: 'JetBrains Mono', monospace;
-}
-.chat-suggestions {
-  padding: .65rem 1.4rem .4rem;
-  background: var(--offwhite); border-bottom: 1px solid var(--border);
-  display: flex; flex-wrap: wrap; gap: .35rem;
-}
-.sug-pill {
-  background: white; color: var(--fern);
-  border: 1px solid rgba(74,140,92,.25);
-  border-radius: 20px; padding: .25rem .75rem;
-  font-size: .73rem; cursor: pointer; font-weight: 500;
-  transition: all .15s;
-}
-.sug-pill:hover { background: var(--fog); }
-.chat-msgs { flex: 1; overflow-y: auto; padding: 1rem 1.4rem; display: flex; flex-direction: column; gap: .7rem; }
-.chat-msgs::-webkit-scrollbar { width: 4px; }
-.chat-msgs::-webkit-scrollbar-thumb { background: var(--mint); border-radius: 4px; }
-.msg-row { display: flex; gap: .6rem; align-items: flex-end; }
-.msg-row.user { flex-direction: row-reverse; }
-.msg-av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; flex-shrink: 0; }
-.av-bot { background: var(--gold); }
-.av-user { background: var(--forest); }
-.msg-bbl { max-width: 78%; padding: .6rem .9rem; border-radius: 12px; font-size: .855rem; line-height: 1.55; }
-.msg-row.bot .msg-bbl { background: white; border: 1px solid var(--border); border-bottom-left-radius: 3px; }
-.msg-row.user .msg-bbl { background: var(--forest); color: var(--straw); border-bottom-right-radius: 3px; }
-.msg-row.confirm .msg-bbl { background: var(--warn-l); border: 2px solid var(--warn); }
-.sql-blk { margin-top: .4rem; background: #1A1A2E; color: #7EC8A4; font-family: 'JetBrains Mono', monospace; font-size: .68rem; padding: .5rem .7rem; border-radius: 6px; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
-.confirm-row { display: flex; gap: .5rem; margin-top: .6rem; }
-.btn-yes { background: var(--leaf); color: white; border: none; border-radius: 6px; padding: .35rem .9rem; cursor: pointer; font-size: .8rem; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; }
-.btn-no  { background: var(--rust); color: white; border: none; border-radius: 6px; padding: .35rem .9rem; cursor: pointer; font-size: .8rem; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; }
-.typing { display: inline-flex; gap: 3px; align-items: center; }
-.typing span { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); animation: td 1.2s infinite; }
-.typing span:nth-child(2){animation-delay:.2s} .typing span:nth-child(3){animation-delay:.4s}
-@keyframes td{0%,80%,100%{opacity:.2}40%{opacity:1}}
-.chat-input-row { padding: .8rem 1.4rem; background: white; border-top: 1px solid var(--border); display: flex; gap: .6rem; }
-.chat-input-row input { flex: 1; border: 1.5px solid var(--border); border-radius: 9px; padding: .6rem .9rem; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .875rem; background: var(--offwhite); outline: none; transition: border-color .15s; }
-.chat-input-row input:focus { border-color: var(--leaf); background: white; }
-.send-btn { background: var(--forest); color: white; border: none; border-radius: 9px; padding: .6rem 1.2rem; cursor: pointer; font-weight: 600; font-size: .875rem; font-family: 'Plus Jakarta Sans', sans-serif; transition: background .15s; white-space: nowrap; }
-.send-btn:hover { background: var(--fern); }
-.results-card { margin: 0 1.4rem .8rem; }
+/* ─── INFO GRID ───────────────────────────── */
+.info-grid{display:grid;grid-template-columns:1fr 1.6fr;gap:1.1rem;margin-bottom:1.2rem}
+.card{background:white;border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh)}
+.card-hd{padding:.9rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-family:'Lora',serif;font-size:.92rem;color:var(--ink);font-weight:700;display:flex;align-items:center;gap:.5rem}
+.card-bd{padding:1rem 1.2rem}
 
-/* ─── PROFILE ─────────────────────────────────────────── */
-.profile-header {
-  background: linear-gradient(135deg, var(--forest), var(--fern));
-  border-radius: var(--r);
-  padding: 2rem;
-  display: flex; align-items: center; gap: 1.5rem;
-  margin-bottom: 1.2rem;
-  color: white;
-}
-.profile-av-big {
-  width: 72px; height: 72px;
-  background: var(--gold);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.6rem; font-weight: 700; flex-shrink: 0;
-}
-.profile-name { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; }
-.profile-email { font-size: .82rem; opacity: .65; margin-top: 2px; }
-.profile-elevage { font-size: .85rem; opacity: .8; margin-top: 4px; }
+/* ─── ALERT ITEMS ─────────────────────────── */
+.alert-item{display:flex;align-items:flex-start;gap:.65rem;padding:.6rem .8rem;border-radius:9px;margin-bottom:.38rem;font-size:.8rem;line-height:1.45;border-left:3px solid transparent}
+.alert-item.critical{background:var(--rust-l);border-color:var(--rust)}
+.alert-item.warning{background:var(--warn-l);border-color:var(--warn)}
+.alert-item.info{background:var(--sky-l);border-color:var(--sky)}
+.al-tag{font-family:'JetBrains Mono',monospace;font-size:.67rem;font-weight:600;color:var(--muted);flex-shrink:0;background:rgba(255,255,255,.7);padding:1px 6px;border-radius:4px}
+.al-msg{flex:1;color:var(--ink);font-weight:500}
+.al-ck{background:none;border:none;cursor:pointer;opacity:.3;transition:all .15s;font-size:.85rem;padding:0;flex-shrink:0;border-radius:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.al-ck:hover{opacity:1;background:rgba(0,0,0,.06)}
 
-/* ─── GESTATION ─────────────────────────────────────────── */
-.gest-row { display: flex; align-items: center; justify-content: space-between; padding: .55rem .5rem; border-bottom: 1px solid rgba(44,30,20,.05); }
-.gest-row:last-child { border-bottom: none; }
-.gest-ids { font-family: 'JetBrains Mono', monospace; font-size: .78rem; font-weight: 500; color: var(--soil); }
-.gest-date { font-size: .75rem; color: var(--muted); margin-top: 1px; }
-.gest-j { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
-.soon { background: var(--rust-l); color: var(--rust); }
-.ok   { background: var(--fog); color: var(--fern); }
+/* ─── GESTATIONS ──────────────────────────── */
+.gest-row{display:flex;align-items:center;justify-content:space-between;padding:.6rem .4rem;border-bottom:1px solid var(--border)}
+.gest-row:last-child{border-bottom:none}
+.g-tags{font-family:'JetBrains Mono',monospace;font-size:.77rem;font-weight:600;color:var(--ink)}
+.g-date{font-size:.7rem;color:var(--muted);margin-top:1px}
+.g-bar{width:80px;height:5px;background:var(--border);border-radius:3px;margin-top:3px}
+.g-bar-fill{height:100%;border-radius:3px;background:var(--sage);transition:width .5s}
+.g-badge{font-size:.67rem;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.gb-soon{background:var(--rust-l);color:var(--rust)}.gb-ok{background:var(--fog);color:var(--fern)}
 
-/* ─── EMPTY STATE ──────────────────────────────────────── */
-.empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--muted); }
-.empty-state .empty-icon { font-size: 2.5rem; margin-bottom: .8rem; }
-.empty-state p { font-size: .85rem; }
+/* ─── TIPS/ARTICLE CARDS ──────────────────── */
+.tips-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.2rem}
+.tip{background:var(--parch);border:1px solid rgba(192,81,31,.18);border-radius:var(--r);padding:1.1rem 1.2rem;position:relative;overflow:hidden}
+.tip::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--terra),var(--amber))}
+.tip-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;color:var(--terra);margin-bottom:.5rem;display:flex;align-items:center;gap:.35rem}
+.tip h4{font-family:'Lora',serif;font-size:.9rem;color:var(--bark);font-weight:700;margin-bottom:.4rem;line-height:1.4}
+.tip p{font-size:.77rem;color:var(--clay);line-height:1.65}
 
-/* ─── PAGE VISIBILITY ──────────────────────────────────── */
-.page { display: none; }
-.page.active { display: block; }
-#page-chat.active { display: flex; flex-direction: column; }
+/* ─── PAGE ARTICLE STRIPS ─────────────────── */
+.article-strip{background:white;border:1px solid var(--border);border-radius:var(--r);padding:.85rem 1.1rem;display:flex;align-items:flex-start;gap:.9rem;box-shadow:var(--sh);margin-bottom:1rem}
+.art-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.art-ico.green{background:var(--fog)}.art-ico.gold{background:#FEF7E6}.art-ico.rust{background:var(--rust-l)}.art-ico.sky{background:var(--sky-l)}
+.art-title{font-family:'Lora',serif;font-size:.85rem;font-weight:600;color:var(--ink);line-height:1.35}
+.art-meta{font-size:.68rem;color:var(--muted);margin-top:2px;line-height:1.5}
 
-/* ─── TOAST ─────────────────────────────────────────────── */
-.toast {
-  position: fixed; bottom: 1.5rem; right: 1.5rem;
-  background: var(--soil); color: white;
-  padding: .7rem 1.2rem; border-radius: var(--r-sm);
-  font-size: .82rem; font-weight: 500;
-  box-shadow: var(--sh-lg);
-  transform: translateY(60px); opacity: 0;
-  transition: all .3s;
-  z-index: 9999;
-}
-.toast.show { transform: translateY(0); opacity: 1; }
-.toast.success { background: var(--fern); }
-.toast.error   { background: var(--rust); }
+/* ─── INFO NOTES ──────────────────────────── */
+.note{padding:.65rem .95rem;border-radius:var(--r-xs);font-size:.75rem;font-weight:500;margin-top:.8rem;line-height:1.5}
+.note-warn{background:var(--warn-l);border-left:3px solid var(--warn);color:var(--warn)}
+.note-info{background:var(--sky-l);border-left:3px solid var(--sky);color:var(--sky)}
+.note-ok{background:var(--fog);border-left:3px solid var(--sage);color:var(--fern)}
 
-/* ─── MISC ──────────────────────────────────────────────── */
-.flex-end { display: flex; justify-content: flex-end; }
-.flex-sb  { display: flex; justify-content: space-between; align-items: center; }
-.mb-1 { margin-bottom: .8rem; }
-.mb-2 { margin-bottom: 1.2rem; }
-.gap-sm { gap: .5rem; }
-.scroll-y { overflow-y: auto; max-height: 260px; }
-.scroll-y::-webkit-scrollbar { width: 4px; }
-.scroll-y::-webkit-scrollbar-thumb { background: var(--mint); border-radius: 4px; }
+/* ─── TABLES ──────────────────────────────── */
+.tbl-wrap{overflow-x:auto}
+.search-bar{padding:.5rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem}
+.search-bar input{border:none;background:transparent;outline:none;font-family:'Outfit',sans-serif;font-size:.85rem;flex:1;color:var(--ink)}
+.search-bar input::placeholder{color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead th{background:var(--parch);color:var(--muted);font-size:.66rem;text-transform:uppercase;letter-spacing:.7px;padding:.6rem 1rem;text-align:left;border-bottom:1px solid var(--border);font-weight:700;white-space:nowrap}
+tbody td{padding:.6rem 1rem;border-bottom:1px solid rgba(24,18,10,.04);color:var(--ink);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--parch)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:500}
+.chip{display:inline-flex;align-items:center;padding:.22rem .7rem;border-radius:20px;font-size:.7rem;font-weight:700;white-space:nowrap}
+.tag-chip{background:var(--parch);color:var(--bark);border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.72rem}
+.ch-actif{background:var(--fog);color:var(--fern)}.ch-vendu{background:#FEF7E6;color:var(--gold)}.ch-mort{background:#F5F5F5;color:#999}.ch-quarantaine{background:var(--rust-l);color:var(--rust)}
+.ch-M{background:var(--sky-l);color:var(--sky)}.ch-F{background:#FCE7F3;color:#C2185B}
+.ch-crit{background:var(--rust-l);color:var(--rust)}.ch-warn{background:var(--warn-l);color:var(--warn)}.ch-info{background:var(--sky-l);color:var(--sky)}
+.gmq-low{color:var(--rust);font-weight:700}
+
+/* ─── EMPTY STATES ────────────────────────── */
+.empty{text-align:center;padding:3rem 1rem;color:var(--muted)}
+.empty-ico{font-size:3rem;margin-bottom:.8rem;opacity:.5;display:block}
+.empty h3{font-family:'Lora',serif;font-size:1rem;color:var(--ink);margin-bottom:.4rem}
+.empty p{font-size:.82rem;line-height:1.6}
+
+/* ─── MODALS ──────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(24,18,10,.55);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+.overlay.open{display:flex}
+.modal{background:white;border-radius:var(--r);width:100%;max-width:580px;max-height:92vh;overflow-y:auto;box-shadow:0 28px 70px rgba(24,18,10,.22);animation:mSlide .24s cubic-bezier(.16,1,.3,1)}
+@keyframes mSlide{from{transform:translateY(28px) scale(.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+.modal-hd{padding:1.2rem 1.5rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:1}
+.modal-ttl{font-family:'Lora',serif;font-size:1.1rem;color:var(--ink);font-weight:700}
+.modal-x{background:var(--parch);border:none;cursor:pointer;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.1rem;transition:all .15s}
+.modal-x:hover{background:var(--rust-l);color:var(--rust)}
+.modal-bd{padding:1.3rem 1.5rem}
+.modal-ft{padding:.9rem 1.5rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:.6rem;background:var(--parch)}
+.form-sec{font-size:.63rem;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;color:var(--muted);margin:1.2rem 0 .7rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+
+/* ─── CONFIRM DIALOG ──────────────────────── */
+.confirm-overlay{position:fixed;inset:0;background:rgba(24,18,10,.6);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;z-index:2000}
+.confirm-overlay.open{display:flex}
+.confirm-box{background:white;border-radius:var(--r);padding:2rem;max-width:400px;width:100%;margin:1rem;box-shadow:var(--sh-lg);animation:mSlide .22s ease}
+.confirm-ico{font-size:2.5rem;text-align:center;margin-bottom:.8rem}
+.confirm-title{font-family:'Lora',serif;font-size:1.1rem;color:var(--ink);font-weight:700;text-align:center;margin-bottom:.5rem}
+.confirm-msg{font-size:.83rem;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:1.5rem}
+.confirm-btns{display:flex;gap:.7rem}
+
+/* ─── CHAT ────────────────────────────────── */
+.chat-hd{padding:.85rem 1.8rem;background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.chat-hd-l h3{font-family:'Lora',serif;font-size:1rem;color:var(--ink);font-weight:700}
+.chat-hd-l p{font-size:.72rem;color:var(--muted);margin-top:1px}
+.model-chip{font-size:.63rem;background:var(--fog);color:var(--fern);border:1px solid var(--mint);padding:3px 10px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-weight:600}
+.chat-sugs{padding:.7rem 1.8rem .5rem;background:var(--parch);border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.4rem}
+.sug{background:white;color:var(--bark);border:1px solid var(--border);border-radius:20px;padding:.27rem .82rem;font-size:.72rem;cursor:pointer;font-weight:600;transition:all .15s}
+.sug:hover{background:var(--fog);border-color:var(--mint);color:var(--forest);transform:translateY(-1px)}
+.chat-msgs{flex:1;overflow-y:auto;padding:1.4rem 1.8rem;display:flex;flex-direction:column;gap:1rem}
+.chat-msgs::-webkit-scrollbar{width:4px}
+.chat-msgs::-webkit-scrollbar-thumb{background:rgba(192,81,31,.2);border-radius:4px}
+.msg-row{display:flex;gap:.7rem;align-items:flex-end}
+.msg-row.user{flex-direction:row-reverse}
+.msg-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;flex-shrink:0;font-family:'Lora',serif;font-weight:700}
+.av-bot{background:linear-gradient(135deg,var(--amber),var(--gold));color:white}
+.av-user{background:var(--forest);color:var(--straw)}
+.msg-bbl{max-width:76%;padding:.7rem 1rem;border-radius:14px;font-size:.855rem;line-height:1.58}
+.msg-row.bot .msg-bbl{background:white;border:1px solid var(--border);border-bottom-left-radius:3px;color:var(--ink);box-shadow:var(--sh)}
+.msg-row.user .msg-bbl{background:var(--forest);color:var(--straw);border-bottom-right-radius:3px}
+.msg-row.confirm-msg .msg-bbl{background:var(--warn-l);border:2px solid var(--warn)}
+.msg-time{font-size:.62rem;color:var(--muted);margin-top:.3rem;text-align:right}
+.msg-row.bot .msg-time{text-align:left}
+.sql-blk{margin-top:.5rem;background:#0F1117;color:#7EC8A4;font-family:'JetBrains Mono',monospace;font-size:.67rem;padding:.65rem .85rem;border-radius:8px;white-space:pre-wrap;word-break:break-all;line-height:1.5;border:1px solid rgba(126,200,164,.1)}
+.confirm-row{display:flex;gap:.5rem;margin-top:.7rem}
+.btn-yes{background:var(--sage);color:white;border:none;border-radius:7px;padding:.38rem .95rem;cursor:pointer;font-size:.8rem;font-family:'Outfit',sans-serif;font-weight:700;transition:all .15s}
+.btn-yes:hover{background:var(--fern)}
+.btn-no{background:var(--rust);color:white;border:none;border-radius:7px;padding:.38rem .95rem;cursor:pointer;font-size:.8rem;font-family:'Outfit',sans-serif;font-weight:700;transition:all .15s}
+.typing{display:inline-flex;gap:3px;align-items:center}
+.typing span{width:5px;height:5px;border-radius:50%;background:var(--amber);animation:tp 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes tp{0%,80%,100%{opacity:.2}40%{opacity:1}}
+.chat-in{padding:.9rem 1.8rem;background:white;border-top:1px solid var(--border);display:flex;gap:.7rem;align-items:center}
+.chat-in input{flex:1;border:1.5px solid var(--border);border-radius:11px;padding:.65rem 1rem;font-family:'Outfit',sans-serif;font-size:.875rem;background:var(--parch);outline:none;transition:all .2s}
+.chat-in input:focus{border-color:var(--sage);background:white;box-shadow:0 0 0 3px rgba(77,140,98,.1)}
+.send-btn{background:var(--forest);color:white;border:none;border-radius:11px;padding:.65rem 1.4rem;cursor:pointer;font-weight:700;font-size:.875rem;font-family:'Outfit',sans-serif;transition:all .18s;white-space:nowrap}
+.send-btn:hover{background:var(--fern);transform:translateY(-1px)}
+.chat-results-wrap{padding:0 1.8rem .8rem}
+
+/* ─── PROFIL ──────────────────────────────── */
+.prof-hero{background:linear-gradient(135deg,var(--forest) 0%,var(--fern) 100%);border-radius:var(--r);padding:2rem;display:flex;align-items:center;gap:1.6rem;margin-bottom:1.3rem}
+.prof-av{width:72px;height:72px;background:linear-gradient(135deg,var(--amber),var(--gold));border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:1.7rem;font-weight:700;color:white;flex-shrink:0;box-shadow:0 4px 16px rgba(200,125,10,.35)}
+.prof-name{font-family:'Lora',serif;font-size:1.4rem;color:white;font-weight:700}
+.prof-info{font-size:.8rem;color:rgba(255,255,255,.5);margin-top:3px}
+.prof-elevage{font-size:.82rem;color:var(--straw);margin-top:4px;font-weight:600}
+
+/* ─── SCROLL ──────────────────────────────── */
+.scroll-y{overflow-y:auto;max-height:220px}
+.scroll-y::-webkit-scrollbar{width:3px}
+.scroll-y::-webkit-scrollbar-thumb{background:rgba(192,81,31,.2);border-radius:3px}
+
+/* ─── TOAST ───────────────────────────────── */
+#toast-stack{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:.5rem;z-index:9999;max-width:340px}
+.toast-item{background:var(--ink);color:white;padding:.8rem 1.1rem;border-radius:var(--r-sm);font-size:.82rem;font-weight:500;box-shadow:var(--sh-lg);display:flex;align-items:flex-start;gap:.6rem;animation:tIn .3s cubic-bezier(.16,1,.3,1) both;line-height:1.4}
+.toast-item.success{background:var(--fern)}.toast-item.error{background:var(--rust)}.toast-item.warn{background:var(--warn)}
+.t-ico{font-size:.9rem;flex-shrink:0;margin-top:1px}
+@keyframes tIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes tOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(40px)}}
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- AUTH SCREEN -->
-<!-- ══════════════════════════════════════════════════════ -->
+<!-- ═══════════════ AUTH ═══════════════ -->
 <div id="auth-screen">
+  <div class="auth-bg-circles"><span></span><span></span><span></span></div>
   <div class="auth-left">
-    <div class="auth-left-brand">
-      <div class="auth-logo">🐄</div>
-      <div><h1>BoviBot</h1><small>Plateforme de Gestion d'Élevage</small></div>
+    <div class="auth-brand">
+      <div class="auth-brand-logo">🐄</div>
+      <div><h1>BoviBot</h1><small>Plateforme d'élevage bovin · ESP/UCAD</small></div>
     </div>
-    <div class="auth-hero-text">
-      <h2>Gérez votre troupeau avec l'<em>intelligence artificielle</em></h2>
-      <p>Une plateforme complète pour suivre vos animaux, gérer la santé, la reproduction et laisser l'IA répondre à toutes vos questions.</p>
+    <h2 class="auth-hero">Gérez votre troupeau<br>avec <em>intelligence</em></h2>
+    <p class="auth-sub">Une plateforme pensée pour les éleveurs sénégalais. Suivez la santé, la croissance et la reproduction de vos animaux en temps réel.</p>
+    <div class="auth-badges">
+      <span class="auth-badge"><span class="auth-badge-ico">📊</span>Tableau de bord live</span>
+      <span class="auth-badge"><span class="auth-badge-ico">🔔</span>Alertes automatiques</span>
+      <span class="auth-badge"><span class="auth-badge-ico">📈</span>Calcul GMQ & âge</span>
+      <span class="auth-badge"><span class="auth-badge-ico">💬</span>Assistant IA</span>
     </div>
-    <div class="auth-features">
-      <div class="auth-feat"><div class="auth-feat-icon">📊</div> Tableau de bord en temps réel</div>
-      <div class="auth-feat"><div class="auth-feat-icon">💬</div> Assistant IA en langage naturel</div>
-      <div class="auth-feat"><div class="auth-feat-icon">🔔</div> Alertes automatiques (triggers MySQL)</div>
-      <div class="auth-feat"><div class="auth-feat-icon">📈</div> Suivi GMQ et croissance du troupeau</div>
+    <div class="auth-quote">
+      <p>« Un éleveur qui connaît le poids de chaque animal connaît la santé de son troupeau. »</p>
+      <cite>— Proverbe de l'élevage bovin</cite>
     </div>
   </div>
-
   <div class="auth-right">
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchTab('login')">Connexion</button>
-      <button class="auth-tab" onclick="switchTab('register')">Créer un compte</button>
+      <button class="auth-tab" onclick="switchTab('register')">Inscription</button>
     </div>
-
-    <!-- LOGIN -->
     <div id="tab-login">
-      <h2 class="auth-form-title">Bon retour 👋</h2>
-      <p class="auth-form-sub">Connectez-vous à votre espace élevage</p>
-      <div id="login-error" class="auth-error"></div>
-      <div class="form-group"><label>Nom d'utilisateur</label><input type="text" id="l-username" placeholder="ex: diallo_elevage"></div>
+      <div class="auth-ttl">Bon retour 👋</div>
+      <div class="auth-desc">Connectez-vous à votre espace d'élevage</div>
+      <div id="login-err" class="auth-err"></div>
+      <div class="form-group"><label>Nom d'utilisateur</label><input type="text" id="l-user" placeholder="ex: diallo_elevage" autocomplete="username"></div>
       <div class="form-group"><label>Mot de passe</label><input type="password" id="l-pwd" placeholder="••••••••" onkeypress="if(event.key==='Enter')doLogin()"></div>
-      <button class="btn btn-primary btn-full" onclick="doLogin()">Se connecter</button>
+      <button class="btn btn-primary btn-full" onclick="doLogin()">Se connecter →</button>
     </div>
-
-    <!-- REGISTER -->
     <div id="tab-register" style="display:none">
-      <h2 class="auth-form-title">Créer votre compte</h2>
-      <p class="auth-form-sub">Commencez à gérer votre troupeau</p>
-      <div id="reg-error" class="auth-error"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Prénom</label><input type="text" id="r-prenom" placeholder="Mouhamadou"></div>
-        <div class="form-group"><label>Nom</label><input type="text" id="r-nom" placeholder="Diallo"></div>
-      </div>
-      <div class="form-group"><label>Nom d'utilisateur *</label><input type="text" id="r-username" placeholder="ex: diallo_elevage"></div>
-      <div class="form-group"><label>Mot de passe</label><input type="password" id="r-pwd" placeholder="Minimum 6 caractères"></div>
-      <div class="form-group"><label>Nom de l'élevage <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="text" id="r-elevage" placeholder="Élevage Diallo & Fils"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Téléphone</label><input type="text" id="r-tel" placeholder="+221 77..."></div>
-        <div class="form-group"><label>Localité</label><input type="text" id="r-loc" placeholder="Dakar, Thiès..."></div>
-      </div>
-      <button class="btn btn-primary btn-full" onclick="doRegister()">Créer mon compte</button>
+      <div class="auth-ttl">Créer un compte</div>
+      <div class="auth-desc">Commencez à gérer votre troupeau dès aujourd'hui</div>
+      <div id="reg-err" class="auth-err"></div>
+      <div class="form-row"><div class="form-group"><label>Prénom</label><input type="text" id="r-prenom" placeholder="Oumar"></div><div class="form-group"><label>Nom</label><input type="text" id="r-nom" placeholder="Diallo"></div></div>
+      <div class="form-group"><label>Nom d'utilisateur *</label><input type="text" id="r-user" placeholder="oumar_elevage"></div>
+      <div class="form-group"><label>Mot de passe *</label><input type="password" id="r-pwd" placeholder="Min. 6 caractères"></div>
+      <div class="form-group"><label>Nom de l'élevage</label><input type="text" id="r-elevage" placeholder="Élevage Diallo & Fils"></div>
+      <div class="form-row"><div class="form-group"><label>Téléphone</label><input type="text" id="r-tel" placeholder="+221 77..."></div><div class="form-group"><label>Localité</label><input type="text" id="r-loc" placeholder="Dakar, Thiès..."></div></div>
+      <button class="btn btn-primary btn-full" onclick="doRegister()">Créer mon compte →</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- APP SCREEN -->
-<!-- ══════════════════════════════════════════════════════ -->
+<!-- ═══════════════ APP ════════════════ -->
 <div id="app-screen">
-  <div class="app-layout">
+<div class="app">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="sb-brand">
-        <div class="sb-logo">🐄</div>
-        <div><div class="sb-name">BoviBot</div><div class="sb-tagline">Gestion d'Élevage</div></div>
-      </div>
-      <div class="sb-user">
-        <div class="sb-avatar" id="sb-avatar">?</div>
-        <div>
-          <div class="sb-user-name" id="sb-username">Chargement…</div>
-          <div class="sb-user-role" id="sb-elevage">—</div>
-        </div>
-      </div>
-      <div class="sb-section">Principal</div>
-      <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span> Tableau de bord</div>
-      <div class="nav-item" onclick="nav('chat',this)"><span class="nav-icon">💬</span> Assistant IA</div>
-      <div class="sb-section">Gestion</div>
-      <div class="nav-item" onclick="nav('animaux',this)"><span class="nav-icon">🐄</span> Animaux</div>
-      <div class="nav-item" onclick="nav('sante',this)"><span class="nav-icon">💉</span> Santé</div>
-      <div class="nav-item" onclick="nav('reproduction',this)"><span class="nav-icon">🍼</span> Reproduction</div>
-      <div class="nav-item" onclick="nav('ventes',this)"><span class="nav-icon">💰</span> Ventes</div>
-      <div class="sb-section">Système</div>
-      <div class="nav-item" onclick="nav('alertes',this)">
-        <span class="nav-icon">⚠️</span> Alertes
-        <span class="nav-badge" id="nb-alertes" style="display:none">0</span>
-      </div>
-      <div class="nav-item" onclick="nav('profil',this)"><span class="nav-icon">👤</span> Mon profil</div>
-      <div class="sb-footer">
-        <button class="sb-footer-btn" onclick="window.open(API+'/docs','_blank')">🔧 API</button>
-        <button class="sb-footer-btn" onclick="doLogout()">🚪 Déco.</button>
-      </div>
-    </aside>
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-top"><div class="sb-logo">🐄</div><div><div class="sb-brand-name">BoviBot</div><div class="sb-brand-sub">Gestion d'élevage</div></div></div>
+  <div class="sb-user" onclick="nav('profil',null)">
+    <div class="sb-av" id="sb-av">?</div>
+    <div><div class="sb-uname" id="sb-uname">—</div><div class="sb-urole" id="sb-urole">Élevage</div></div>
+  </div>
+  <div class="sb-section">Principal</div>
+  <div class="nav">
+    <div class="ni active" onclick="nav('dashboard',this)"><span class="ni-ico">📊</span>Tableau de bord</div>
+    <div class="ni" onclick="nav('chat',this)"><span class="ni-ico">✨</span>Assistant IA</div>
+  </div>
+  <div class="sb-section">Gestion</div>
+  <div class="nav">
+    <div class="ni" onclick="nav('animaux',this)"><span class="ni-ico">🐄</span>Animaux</div>
+    <div class="ni" onclick="nav('sante',this)"><span class="ni-ico">💉</span>Santé</div>
+    <div class="ni" onclick="nav('reproduction',this)"><span class="ni-ico">🍼</span>Reproduction</div>
+    <div class="ni" onclick="nav('ventes',this)"><span class="ni-ico">💰</span>Ventes</div>
+  </div>
+  <div class="sb-section">Système</div>
+  <div class="nav">
+    <div class="ni" onclick="nav('alertes',this)"><span class="ni-ico">⚠️</span>Alertes<span class="ni-badge" id="nb-al" style="display:none">0</span></div>
+    <div class="ni" onclick="nav('profil',this)"><span class="ni-ico">👤</span>Mon profil</div>
+  </div>
+  <div class="sb-conseil">
+    <div class="sb-conseil-hd">💡 Conseil du jour</div>
+    <p id="conseil-txt">Chargement…</p>
+    <div class="sb-conseil-src" id="conseil-src"></div>
+  </div>
+  <div class="sb-foot">
+    <button class="sb-footbtn" onclick="window.open(API+'/docs','_blank')">⚙️ API Docs</button>
+    <button class="sb-footbtn" onclick="doLogout()">🚪 Déconnexion</button>
+  </div>
+</aside>
 
-    <!-- RIGHT -->
-    <div style="display:flex;flex-direction:column;overflow:hidden;">
-      <header class="topbar">
-        <div>
-          <div class="topbar-title" id="tb-title">Tableau de bord</div>
-          <div class="topbar-sub" id="tb-sub">Vue d'ensemble</div>
-        </div>
-        <div class="topbar-right">
-          <div class="pill"><div class="dot"></div> Système actif</div>
-          <button id="tb-action-btn" class="btn btn-gold btn-sm" style="display:none" onclick="tbAction()"></button>
-        </div>
-      </header>
-
-      <div class="main-content">
-
-        <!-- ── DASHBOARD ── -->
-        <div id="page-dashboard" class="page active">
-          <div class="page-content">
-            <div class="stats-grid">
-              <div class="stat-card"><div class="stat-ico ico-green">🐄</div><div><div class="stat-val" id="s-actifs">—</div><div class="stat-lbl">Animaux actifs</div></div></div>
-              <div class="stat-card"><div class="stat-ico ico-blue">🍼</div><div><div class="stat-val" id="s-gest">—</div><div class="stat-lbl">En gestation</div></div></div>
-              <div class="stat-card"><div class="stat-ico ico-gold">⚠️</div><div><div class="stat-val" id="s-alerts">—</div><div class="stat-lbl">Alertes actives</div></div></div>
-              <div class="stat-card"><div class="stat-ico ico-rust">🚨</div><div><div class="stat-val danger" id="s-crit">—</div><div class="stat-lbl">Alertes critiques</div></div></div>
-              <div class="stat-card"><div class="stat-ico ico-green">♂</div><div><div class="stat-val" id="s-males">—</div><div class="stat-lbl">Mâles actifs</div></div></div>
-              <div class="stat-card"><div class="stat-ico ico-gold">♀</div><div><div class="stat-val" id="s-femelles">—</div><div class="stat-lbl">Femelles actives</div></div></div>
-              <div class="stat-card"><div class="stat-ico ico-blue">💰</div><div><div class="stat-val" id="s-ventes">—</div><div class="stat-lbl">Ventes ce mois</div></div></div>
-              <div class="stat-card"><div class="stat-ico ico-rust">📈</div><div><div class="stat-val" id="s-ca">—</div><div class="stat-lbl">CA mois (FCFA)</div></div></div>
-            </div>
-            <div class="two-col">
-              <div class="card">
-                <div class="card-head"><span class="card-title">⚠️ Alertes récentes</span></div>
-                <div class="card-body scroll-y" id="dash-alertes"><div class="empty-state"><div class="empty-icon">✅</div><p>Aucune alerte active</p></div></div>
-              </div>
-              <div class="card">
-                <div class="card-head"><span class="card-title">🍼 Gestations en cours</span></div>
-                <div class="card-body scroll-y" id="dash-gest"><div class="empty-state"><div class="empty-icon">🐄</div><p>Aucune gestation en cours</p></div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── CHAT ── -->
-        <div id="page-chat" class="page">
-          <div class="chat-top">
-            <h3>💬 Assistant BoviBot</h3>
-            <span class="model-chip" id="model-chip">llama-3.3-70b</span>
-          </div>
-          <div class="chat-suggestions">
-            <button class="sug-pill" onclick="ask('Liste tous les animaux actifs avec leur âge et GMQ')">🐄 Troupeau</button>
-            <button class="sug-pill" onclick="ask('Quels animaux ont un GMQ inférieur à 0.3 kg/jour ?')">📉 GMQ faibles</button>
-            <button class="sug-pill" onclick="ask('Quelles femelles vêlent dans les 30 prochains jours ?')">🍼 Vêlages proches</button>
-            <button class="sug-pill" onclick="ask('Quels animaux n\'ont pas été vaccinés depuis 6 mois ?')">💉 Vaccinations</button>
-            <button class="sug-pill" onclick="ask('Enregistre une pesée de 325 kg pour TAG-001 aujourd\'hui')">⚖️ Saisir pesée</button>
-            <button class="sug-pill" onclick="ask('Quel est le coût total d\'alimentation ce mois-ci ?')">🌾 Coût alim.</button>
-          </div>
-          <div class="chat-msgs" id="chat-box">
-            <div class="msg-row bot">
-              <div class="msg-av av-bot">🐄</div>
-              <div class="msg-bbl">Bonjour ! Je suis <strong>BoviBot</strong>.<br>Posez vos questions sur votre troupeau ou demandez-moi d'enregistrer une pesée, une vente…</div>
-            </div>
-          </div>
-          <div id="chat-results" class="results-card" style="display:none">
-            <div class="card">
-              <div class="card-head"><span class="card-title">📋 Résultats</span><span id="res-count" style="font-size:.75rem;color:var(--muted)"></span></div>
-              <div class="card-body tbl-wrap"><table><thead id="res-thead"></thead><tbody id="res-tbody"></tbody></table></div>
-            </div>
-          </div>
-          <div class="chat-input-row">
-            <input type="text" id="chat-in" placeholder="Ex : Quel animal a le meilleur GMQ ?" onkeypress="if(event.key==='Enter')sendChat()">
-            <button class="send-btn" onclick="sendChat()">Envoyer ➤</button>
-          </div>
-        </div>
-
-        <!-- ── ANIMAUX ── -->
-        <div id="page-animaux" class="page">
-          <div class="page-content">
-            <div class="card">
-              <div class="card-head">
-                <span class="card-title">🐄 Liste des animaux</span>
-                <button class="btn btn-primary btn-sm" onclick="openModal('modal-animal')">+ Ajouter</button>
-              </div>
-              <div class="card-body tbl-wrap">
-                <table>
-                  <thead><tr><th>Tag</th><th>Nom</th><th>Race</th><th>Sexe</th><th>Âge</th><th>Poids</th><th>GMQ</th><th>Statut</th><th>Actions</th></tr></thead>
-                  <tbody id="tbl-animaux"><tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">Chargement…</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── SANTÉ ── -->
-        <div id="page-sante" class="page">
-          <div class="page-content">
-            <div class="card">
-              <div class="card-head">
-                <span class="card-title">💉 Actes sanitaires</span>
-                <button class="btn btn-primary btn-sm" onclick="openModal('modal-sante')">+ Ajouter</button>
-              </div>
-              <div class="card-body tbl-wrap">
-                <table>
-                  <thead><tr><th>Animal</th><th>Type</th><th>Description</th><th>Date</th><th>Vétérinaire</th><th>Médicament</th><th>Coût</th><th>Prochain RDV</th></tr></thead>
-                  <tbody id="tbl-sante"><tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">Chargement…</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── REPRODUCTION ── -->
-        <div id="page-reproduction" class="page">
-          <div class="page-content">
-            <div class="card">
-              <div class="card-head">
-                <span class="card-title">🍼 Gestations & Reproduction</span>
-                <button class="btn btn-primary btn-sm" onclick="openModal('modal-repro')">+ Enregistrer</button>
-              </div>
-              <div class="card-body tbl-wrap">
-                <table>
-                  <thead><tr><th>Mère</th><th>Père</th><th>Saillie</th><th>Vêlage prévu</th><th>J-restants</th><th>Statut</th></tr></thead>
-                  <tbody id="tbl-repro"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">Chargement…</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── VENTES ── -->
-        <div id="page-ventes" class="page">
-          <div class="page-content">
-            <div class="card">
-              <div class="card-head">
-                <span class="card-title">💰 Ventes</span>
-                <button class="btn btn-primary btn-sm" onclick="openModal('modal-vente')">+ Déclarer</button>
-              </div>
-              <div class="card-body tbl-wrap">
-                <table>
-                  <thead><tr><th>Animal</th><th>Acheteur</th><th>Date</th><th>Poids</th><th>Prix (FCFA)</th></tr></thead>
-                  <tbody id="tbl-ventes"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">Chargement…</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── ALERTES ── -->
-        <div id="page-alertes" class="page">
-          <div class="page-content">
-            <div class="card">
-              <div class="card-head"><span class="card-title">⚠️ Toutes les alertes</span></div>
-              <div class="card-body" id="all-alertes"><div class="empty-state"><div class="empty-icon">✅</div><p>Aucune alerte active</p></div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── PROFIL ── -->
-        <div id="page-profil" class="page">
-          <div class="page-content">
-            <div class="profile-header">
-              <div class="profile-av-big" id="prof-av">?</div>
-              <div>
-                <div class="profile-name" id="prof-name">—</div>
-                <div class="profile-email" id="prof-email">—</div>
-                <div class="profile-elevage" id="prof-elevage">—</div>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-head"><span class="card-title">✏️ Modifier le profil</span></div>
-              <div class="card-body">
-                <div class="form-row mb-1">
-                  <div class="form-group"><label>Prénom</label><input type="text" id="p-prenom"></div>
-                  <div class="form-group"><label>Nom</label><input type="text" id="p-nom"></div>
-                </div>
-                <div class="form-row mb-1">
-                  <div class="form-group"><label>Nom de l'élevage</label><input type="text" id="p-elevage"></div>
-                  <div class="form-group"><label>Téléphone</label><input type="text" id="p-tel"></div>
-                </div>
-                <div class="form-group mb-1"><label>Localité</label><input type="text" id="p-loc"></div>
-                <div class="flex-end"><button class="btn btn-primary" onclick="saveProfile()">💾 Sauvegarder</button></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- end main-content -->
-    </div><!-- end right -->
-  </div><!-- end app-layout -->
-</div>
-
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- MODALS -->
-<!-- ══════════════════════════════════════════════════════ -->
-
-<!-- ANIMAL -->
-<div class="modal-overlay" id="modal-animal">
-  <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title" id="modal-animal-title">🐄 Ajouter un animal</span>
-      <button class="modal-close" onclick="closeModal('modal-animal')">×</button>
+<!-- RIGHT SIDE -->
+<div style="display:flex;flex-direction:column;overflow:hidden">
+  <header class="topbar">
+    <div class="topbar-l"><div class="topbar-title" id="tb-title">Tableau de bord</div><div class="topbar-sub" id="tb-sub">Vue d'ensemble du troupeau</div></div>
+    <div class="topbar-r">
+      <div class="live-pill"><div class="live-dot"></div>Système actif</div>
+      <button id="tb-btn" class="btn btn-gold btn-sm" style="display:none" onclick="tbAct()"></button>
     </div>
-    <div class="modal-body">
+  </header>
+
+  <div class="main">
+
+    <!-- ════ DASHBOARD ════ -->
+    <div id="pg-dashboard" class="pg active">
+      <div class="wrap">
+        <!-- Hero -->
+        <div class="dash-hero">
+          <div>
+            <div class="dash-hero-badge">🌅 Rapport du jour</div>
+            <h2 id="greet-msg">Bonjour !</h2>
+            <p id="greet-sub">Voici l'état de votre troupeau.</p>
+            <div class="quick-actions">
+              <span class="qa" onclick="openM('m-animal')">➕ Ajouter animal</span>
+              <span class="qa" onclick="openM('m-sante')">💉 Acte sanitaire</span>
+              <span class="qa" onclick="openM('m-repro')">🍼 Gestation</span>
+              <span class="qa" onclick="openM('m-vente')">💰 Déclarer vente</span>
+            </div>
+          </div>
+          <div class="dash-hero-cow">🐄</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="sc green"><div class="sc-ico ico-g">🐄</div><div><div class="sc-val" id="s-actifs">—</div><div class="sc-lbl">Animaux actifs</div></div></div>
+          <div class="sc sky"><div class="sc-ico ico-s">🍼</div><div><div class="sc-val" id="s-gest">—</div><div class="sc-lbl">En gestation</div></div></div>
+          <div class="sc gold"><div class="sc-ico ico-o">⚠️</div><div><div class="sc-val" id="s-alerts">—</div><div class="sc-lbl">Alertes actives</div></div></div>
+          <div class="sc rust"><div class="sc-ico ico-r">🚨</div><div><div class="sc-val danger" id="s-crit">—</div><div class="sc-lbl">Alertes critiques</div></div></div>
+          <div class="sc green"><div class="sc-ico ico-g">♂</div><div><div class="sc-val" id="s-males">—</div><div class="sc-lbl">Mâles actifs</div></div></div>
+          <div class="sc gold"><div class="sc-ico ico-o">♀</div><div><div class="sc-val" id="s-femelles">—</div><div class="sc-lbl">Femelles actives</div></div></div>
+          <div class="sc sky"><div class="sc-ico ico-s">💰</div><div><div class="sc-val" id="s-ventes">—</div><div class="sc-lbl">Ventes ce mois</div></div></div>
+          <div class="sc green"><div class="sc-ico ico-g">📈</div><div><div class="sc-val" id="s-ca">—</div><div class="sc-lbl">CA mois (FCFA)</div></div></div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-hd"><div><div class="chart-title">Répartition du troupeau</div><div class="chart-sub">Par statut · Animaux actifs</div></div></div>
+            <canvas id="chart-status"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-hd"><div><div class="chart-title">Évolution des pesées</div><div class="chart-sub">Poids moyen · 6 derniers mois</div></div></div>
+            <canvas id="chart-poids"></canvas>
+          </div>
+        </div>
+
+        <!-- Alertes + Gestations -->
+        <div class="info-grid">
+          <div class="card">
+            <div class="card-hd"><span class="card-title">⚠️ Alertes récentes</span><button class="btn btn-ghost btn-xs" onclick="nav('alertes',null)">Voir tout</button></div>
+            <div class="card-bd scroll-y" id="dash-alerts"><div class="empty"><span class="empty-ico">✅</span><p>Tout est sous contrôle !</p></div></div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><span class="card-title">🍼 Vêlages à venir</span></div>
+            <div class="card-bd scroll-y" id="dash-gest"><div class="empty"><span class="empty-ico">🐄</span><p>Aucune gestation en cours</p></div></div>
+          </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="tips-row">
+          <div class="tip"><div class="tip-lbl">📖 Le saviez-vous ?</div><h4>Le GMQ idéal pour un Zébu Gobra</h4><p>Un gain moyen quotidien de 0,5 à 0,8 kg/jour est excellent. En dessous de 0,3 kg/jour, une vérification alimentaire s'impose — BoviBot génère une alerte automatiquement.</p></div>
+          <div class="tip"><div class="tip-lbl">🏥 Santé</div><h4>Vaccination FMDV — rappel semestriel</h4><p>La fièvre aphteuse est endémique en Afrique de l'Ouest. Un rappel tous les 6 mois protège votre troupeau. BoviBot vous alerte si la date de rappel est dépassée.</p></div>
+          <div class="tip"><div class="tip-lbl">🍼 Reproduction</div><h4>Gestation bovine : ~280 jours</h4><p>Renseignez la date de saillie et BoviBot calcule automatiquement la date de vêlage. Des alertes sont générées 7 jours avant l'échéance via un event MySQL quotidien.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ CHAT ════ -->
+    <div id="pg-chat" class="pg">
+      <div class="chat-hd">
+        <div class="chat-hd-l"><h3>✨ Assistant BoviBot</h3><p>Interrogez vos données en langage naturel · Enregistrez des pesées et des ventes</p></div>
+        <span class="model-chip" id="model-chip">llama-3.3-70b · Groq</span>
+      </div>
+      <div class="chat-sugs">
+        <button class="sug" onclick="ask('Liste tous les animaux actifs avec leur âge et GMQ')">🐄 État du troupeau</button>
+        <button class="sug" onclick="ask('Quels animaux ont un GMQ inférieur à 0.3 kg/jour ?')">📉 GMQ faibles</button>
+        <button class="sug" onclick="ask('Quelles femelles vêlent dans les 30 prochains jours ?')">🍼 Vêlages proches</button>
+        <button class="sug" onclick="ask('Quels animaux n\'ont pas été vaccinés depuis 6 mois ?')">💉 Vaccinations</button>
+        <button class="sug" onclick="ask('Quel est le coût total d\'alimentation ce mois-ci ?')">🌾 Coût alim.</button>
+        <button class="sug" onclick="ask('Enregistre une pesée de 325 kg pour TAG-001 aujourd\'hui')">⚖️ Saisir pesée</button>
+      </div>
+      <div class="chat-msgs" id="chat-box">
+        <div class="msg-row bot">
+          <div class="msg-av av-bot">🐄</div>
+          <div>
+            <div class="msg-bbl">Bonjour ! Je suis <strong>BoviBot</strong>, votre assistant d'élevage.<br><br>Posez-moi vos questions sur le troupeau en langage naturel — je génère le SQL et lis directement dans votre base. Vous pouvez aussi me demander d'enregistrer une pesée ou une vente, et je demanderai votre confirmation avant toute action.</div>
+            <div class="msg-time">Maintenant</div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-results-wrap" id="chat-results" style="display:none">
+        <div class="card"><div class="card-hd"><span class="card-title">📋 Résultats</span><span id="res-count" style="font-size:.73rem;color:var(--muted)"></span></div><div class="card-bd tbl-wrap"><table><thead id="res-thead"></thead><tbody id="res-tbody"></tbody></table></div></div>
+      </div>
+      <div class="chat-in"><input type="text" id="chat-in" placeholder="Ex : Quel animal a le meilleur GMQ ce mois ?" onkeypress="if(event.key==='Enter')sendChat()"><button class="send-btn" onclick="sendChat()">Envoyer ➤</button></div>
+    </div>
+
+    <!-- ════ ANIMAUX ════ -->
+    <div id="pg-animaux" class="pg">
+      <div class="wrap">
+        <div class="article-strip"><div class="art-ico green">💡</div><div><div class="art-title">Renseignez la parenté (Mère / Père) pour activer la généalogie et les requêtes familiales dans l'assistant IA</div><div class="art-meta">Un GMQ affiché en rouge indique que l'animal est sous le seuil de 300 g/jour — une alerte warning a été générée automatiquement par la procédure <code>sp_enregistrer_pesee</code>.</div></div></div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">🐄 Tous les animaux</span><button class="btn btn-primary btn-sm" onclick="openM('m-animal')">+ Ajouter</button></div>
+          <div class="search-bar">🔍 <input type="text" id="search-animal" placeholder="Rechercher par tag, nom, race…" oninput="filterAnimaux()"></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Tag</th><th>Nom</th><th>Race</th><th>Sexe</th><th>Âge</th><th>Poids</th><th>GMQ</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tbl-animaux"><tr><td colspan="9"><div class="empty"><span class="empty-ico">🐄</span><p>Chargement…</p></div></td></tr></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SANTÉ ════ -->
+    <div id="pg-sante" class="pg">
+      <div class="wrap">
+        <div class="article-strip"><div class="art-ico rust">🏥</div><div><div class="art-title">Un acte avec une date de prochain RDV déjà passée génère automatiquement une alerte critique</div><div class="art-meta">Trigger MySQL <code>trg_alerte_vaccination</code> · Les dates en rouge dans le tableau sont dépassées — programmez un rendez-vous dès que possible.</div></div></div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">💉 Actes sanitaires</span><button class="btn btn-primary btn-sm" onclick="openM('m-sante')">+ Ajouter</button></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Animal</th><th>Type</th><th>Description</th><th>Date</th><th>Vétérinaire</th><th>Médicament</th><th>Coût</th><th>Prochain RDV</th></tr></thead><tbody id="tbl-sante"><tr><td colspan="8"><div class="empty"><span class="empty-ico">💉</span><h3>Aucun acte enregistré</h3><p>Ajoutez votre premier acte sanitaire pour suivre la santé du troupeau.</p></div></td></tr></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ REPRODUCTION ════ -->
+    <div id="pg-reproduction" class="pg">
+      <div class="wrap">
+        <div class="article-strip"><div class="art-ico sky">🍼</div><div><div class="art-title">La gestation bovine dure ~280 jours — renseignez la date de saillie pour le calcul automatique du vêlage</div><div class="art-meta">Un event MySQL quotidien (<code>evt_alerte_velages</code>) génère des alertes pour les vêlages prévus dans les 7 prochains jours. La barre de progression indique l'avancement de la gestation.</div></div></div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">🍼 Gestations & reproduction</span><button class="btn btn-primary btn-sm" onclick="openM('m-repro')">+ Enregistrer</button></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Mère</th><th>Père</th><th>Date saillie</th><th>Vêlage prévu</th><th>Progression</th><th>J-restants</th><th>Statut</th></tr></thead><tbody id="tbl-repro"><tr><td colspan="7"><div class="empty"><span class="empty-ico">🍼</span><h3>Aucune gestation enregistrée</h3><p>Enregistrez la première saillie de votre troupeau.</p></div></td></tr></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ VENTES ════ -->
+    <div id="pg-ventes" class="pg">
+      <div class="wrap">
+        <div class="article-strip"><div class="art-ico gold">💰</div><div><div class="art-title">Chaque vente appelle automatiquement <code>sp_declarer_vente</code> — le statut de l'animal passe à « vendu »</div><div class="art-meta">Vous ne pouvez pas vendre un animal déjà vendu, mort ou en quarantaine. La procédure vérifie le statut avant toute inscription et retourne une erreur explicite.</div></div></div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">💰 Historique des ventes</span><button class="btn btn-primary btn-sm" onclick="openM('m-vente')">+ Déclarer</button></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Animal</th><th>Acheteur</th><th>Date</th><th>Poids vendu</th><th>Prix (FCFA)</th></tr></thead><tbody id="tbl-ventes"><tr><td colspan="5"><div class="empty"><span class="empty-ico">💰</span><h3>Aucune vente enregistrée</h3><p>Déclarez votre première vente pour suivre votre chiffre d'affaires.</p></div></td></tr></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ ALERTES ════ -->
+    <div id="pg-alertes" class="pg">
+      <div class="wrap">
+        <div class="article-strip"><div class="art-ico gold">⚙️</div><div><div class="art-title">3 triggers + 2 events MySQL génèrent ces alertes automatiquement — aucune intervention manuelle requise</div><div class="art-meta">Cliquez sur ✓ pour marquer une alerte comme traitée. Elle disparaîtra du tableau de bord et du compteur dans la sidebar.</div></div></div>
+        <div class="card"><div class="card-hd"><span class="card-title">⚠️ Toutes les alertes actives</span></div><div class="card-bd" id="all-alerts"><div class="empty"><span class="empty-ico">✅</span><h3>Aucune alerte active</h3><p>Votre troupeau est sous contrôle !</p></div></div></div>
+      </div>
+    </div>
+
+    <!-- ════ PROFIL ════ -->
+    <div id="pg-profil" class="pg">
+      <div class="wrap">
+        <div class="prof-hero"><div class="prof-av" id="prof-av">?</div><div><div class="prof-name" id="prof-name">—</div><div class="prof-info" id="prof-info">—</div><div class="prof-elevage" id="prof-elevage"></div></div></div>
+        <div class="card"><div class="card-hd"><span class="card-title">✏️ Modifier le profil</span></div><div class="card-bd">
+          <div class="form-row" style="margin-bottom:.9rem"><div class="form-group"><label>Prénom</label><input type="text" id="p-prenom"></div><div class="form-group"><label>Nom</label><input type="text" id="p-nom"></div></div>
+          <div class="form-row" style="margin-bottom:.9rem"><div class="form-group"><label>Nom de l'élevage</label><input type="text" id="p-elevage"></div><div class="form-group"><label>Téléphone</label><input type="text" id="p-tel"></div></div>
+          <div class="form-group" style="margin-bottom:.9rem"><label>Localité</label><input type="text" id="p-loc"></div>
+          <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="saveProfile()">💾 Sauvegarder</button></div>
+        </div></div>
+      </div>
+    </div>
+
+  </div><!-- end main -->
+</div><!-- end right -->
+</div><!-- end app -->
+</div><!-- end app-screen -->
+
+<!-- ═══════════════ MODALS ══════════════ -->
+<div class="overlay" id="m-animal">
+  <div class="modal">
+    <div class="modal-hd"><span class="modal-ttl" id="m-animal-ttl">🐄 Ajouter un animal</span><button class="modal-x" onclick="closeM('m-animal')">×</button></div>
+    <div class="modal-bd">
       <input type="hidden" id="a-id">
-      <div class="form-section">Identification</div>
-      <div class="form-row">
-        <div class="form-group"><label>Numéro Tag *</label><input type="text" id="a-tag" placeholder="TAG-008"></div>
-        <div class="form-group"><label>Nom</label><input type="text" id="a-nom" placeholder="Modou"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Race</label><select id="a-race"><option value="">— Sélectionner —</option></select></div>
-        <div class="form-group"><label>Sexe *</label>
-          <select id="a-sexe"><option value="">—</option><option value="M">♂ Mâle</option><option value="F">♀ Femelle</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Date de naissance *</label><input type="date" id="a-nais"></div>
-        <div class="form-group"><label>Poids actuel (kg)</label><input type="number" id="a-poids" placeholder="0.0" step="0.1"></div>
-      </div>
-      <div class="form-group"><label>Statut</label>
-        <select id="a-statut">
-          <option value="actif">Actif</option><option value="vendu">Vendu</option>
-          <option value="mort">Mort</option><option value="quarantaine">Quarantaine</option>
-        </select>
-      </div>
-      <div class="form-section">Parenté (optionnel)</div>
-      <div class="form-row">
-        <div class="form-group"><label>Mère (Tag)</label><select id="a-mere"><option value="">—</option></select></div>
-        <div class="form-group"><label>Père (Tag)</label><select id="a-pere"><option value="">—</option></select></div>
-      </div>
-      <div class="form-group"><label>Notes</label><textarea id="a-notes" placeholder="Observations…"></textarea></div>
+      <div class="form-sec">Identification</div>
+      <div class="form-row"><div class="form-group"><label>Numéro Tag *</label><input type="text" id="a-tag" placeholder="TAG-008"></div><div class="form-group"><label>Nom</label><input type="text" id="a-nom" placeholder="Modou"></div></div>
+      <div class="form-row"><div class="form-group"><label>Race</label><select id="a-race"><option value="">—</option></select></div><div class="form-group"><label>Sexe *</label><select id="a-sexe"><option value="">—</option><option value="M">♂ Mâle</option><option value="F">♀ Femelle</option></select></div></div>
+      <div class="form-row"><div class="form-group"><label>Date de naissance *</label><input type="date" id="a-nais"></div><div class="form-group"><label>Poids actuel (kg)</label><input type="number" id="a-poids" step="0.1" placeholder="0.0"></div></div>
+      <div class="form-group"><label>Statut</label><select id="a-statut"><option value="actif">✅ Actif</option><option value="vendu">💰 Vendu</option><option value="mort">💀 Mort</option><option value="quarantaine">⚠️ Quarantaine</option></select></div>
+      <div class="form-sec">Parenté (optionnel)</div>
+      <div class="form-row"><div class="form-group"><label>Mère (Femelle)</label><select id="a-mere"><option value="">—</option></select></div><div class="form-group"><label>Père (Mâle)</label><select id="a-pere"><option value="">—</option></select></div></div>
+      <div class="form-group"><label>Notes</label><textarea id="a-notes" placeholder="Observations particulières…"></textarea></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-animal')">Annuler</button>
-      <button class="btn btn-primary" onclick="saveAnimal()">💾 Enregistrer</button>
-    </div>
+    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeM('m-animal')">Annuler</button><button class="btn btn-primary" onclick="saveAnimal()">💾 Enregistrer</button></div>
   </div>
 </div>
 
-<!-- SANTÉ -->
-<div class="modal-overlay" id="modal-sante">
+<div class="overlay" id="m-sante">
   <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title">💉 Acte sanitaire</span>
-      <button class="modal-close" onclick="closeModal('modal-sante')">×</button>
-    </div>
-    <div class="modal-body">
+    <div class="modal-hd"><span class="modal-ttl">💉 Acte sanitaire</span><button class="modal-x" onclick="closeM('m-sante')">×</button></div>
+    <div class="modal-bd">
       <div class="form-group"><label>Animal *</label><select id="s-animal"><option value="">— Choisir un animal —</option></select></div>
-      <div class="form-row">
-        <div class="form-group"><label>Type *</label>
-          <select id="s-type">
-            <option value="vaccination">Vaccination</option><option value="traitement">Traitement</option>
-            <option value="examen">Examen</option><option value="chirurgie">Chirurgie</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Date *</label><input type="date" id="s-date"></div>
-      </div>
-      <div class="form-group"><label>Description *</label><textarea id="s-desc" placeholder="Détails de l'acte…"></textarea></div>
-      <div class="form-row">
-        <div class="form-group"><label>Vétérinaire</label><input type="text" id="s-vet" placeholder="Dr Ndiaye"></div>
-        <div class="form-group"><label>Médicament</label><input type="text" id="s-med" placeholder="FMDV Vac"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Coût (FCFA)</label><input type="number" id="s-cout" placeholder="0" step="500"></div>
-        <div class="form-group"><label>Prochain RDV</label><input type="date" id="s-rdv"></div>
-      </div>
+      <div class="form-row"><div class="form-group"><label>Type *</label><select id="s-type"><option value="vaccination">💉 Vaccination</option><option value="traitement">💊 Traitement</option><option value="examen">🩺 Examen</option><option value="chirurgie">🔪 Chirurgie</option></select></div><div class="form-group"><label>Date *</label><input type="date" id="s-date"></div></div>
+      <div class="form-group"><label>Description *</label><textarea id="s-desc" placeholder="Détail de l'acte effectué…"></textarea></div>
+      <div class="form-row"><div class="form-group"><label>Vétérinaire</label><input type="text" id="s-vet" placeholder="Dr Ndiaye"></div><div class="form-group"><label>Médicament</label><input type="text" id="s-med" placeholder="FMDV Vac"></div></div>
+      <div class="form-row"><div class="form-group"><label>Coût (FCFA)</label><input type="number" id="s-cout" step="500" placeholder="0"></div><div class="form-group"><label>Prochain RDV</label><input type="date" id="s-rdv"></div></div>
+      <div class="note note-warn">⚠️ Si le prochain RDV est une date passée, une alerte critique sera automatiquement générée par le trigger MySQL <code>trg_alerte_vaccination</code>.</div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-sante')">Annuler</button>
-      <button class="btn btn-primary" onclick="saveSante()">💾 Enregistrer</button>
-    </div>
+    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeM('m-sante')">Annuler</button><button class="btn btn-primary" onclick="saveSante()">💾 Enregistrer</button></div>
   </div>
 </div>
 
-<!-- REPRODUCTION -->
-<div class="modal-overlay" id="modal-repro">
+<div class="overlay" id="m-repro">
   <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title">🍼 Enregistrer une gestation</span>
-      <button class="modal-close" onclick="closeModal('modal-repro')">×</button>
+    <div class="modal-hd"><span class="modal-ttl">🍼 Enregistrer une gestation</span><button class="modal-x" onclick="closeM('m-repro')">×</button></div>
+    <div class="modal-bd">
+      <div class="form-row"><div class="form-group"><label>Mère (Femelle) *</label><select id="rp-mere"><option value="">—</option></select></div><div class="form-group"><label>Père (Mâle) *</label><select id="rp-pere"><option value="">—</option></select></div></div>
+      <div class="form-row"><div class="form-group"><label>Date de saillie *</label><input type="date" id="rp-saillie"></div><div class="form-group"><label>Vêlage prévu (~280 j)</label><input type="date" id="rp-velage"></div></div>
+      <div class="note note-ok">💡 Si vous laissez la date de vêlage vide, renseignez-la dans la date de saillie + 280 jours environ.</div>
+      <div class="form-group" style="margin-top:.8rem"><label>Notes</label><textarea id="rp-notes" placeholder="Observations…"></textarea></div>
     </div>
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group"><label>Mère (Femelle) *</label><select id="rp-mere"><option value="">—</option></select></div>
-        <div class="form-group"><label>Père (Mâle) *</label><select id="rp-pere"><option value="">—</option></select></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Date de saillie *</label><input type="date" id="rp-saillie"></div>
-        <div class="form-group"><label>Vêlage prévu</label><input type="date" id="rp-velage"></div>
-      </div>
-      <div class="form-group"><label>Notes</label><textarea id="rp-notes" placeholder="Observations…"></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-repro')">Annuler</button>
-      <button class="btn btn-primary" onclick="saveRepro()">💾 Enregistrer</button>
-    </div>
+    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeM('m-repro')">Annuler</button><button class="btn btn-primary" onclick="saveRepro()">💾 Enregistrer</button></div>
   </div>
 </div>
 
-<!-- VENTE -->
-<div class="modal-overlay" id="modal-vente">
+<div class="overlay" id="m-vente">
   <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title">💰 Déclarer une vente</span>
-      <button class="modal-close" onclick="closeModal('modal-vente')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group"><label>Animal *</label><select id="v-animal"><option value="">—</option></select></div>
+    <div class="modal-hd"><span class="modal-ttl">💰 Déclarer une vente</span><button class="modal-x" onclick="closeM('m-vente')">×</button></div>
+    <div class="modal-bd">
+      <div class="form-group"><label>Animal *</label><select id="v-animal"><option value="">— Choisir un animal actif —</option></select></div>
       <div class="form-group"><label>Acheteur *</label><input type="text" id="v-acheteur" placeholder="Moussa Diaw"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Téléphone</label><input type="text" id="v-tel" placeholder="+221 77..."></div>
-        <div class="form-group"><label>Date de vente *</label><input type="date" id="v-date"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Poids de vente (kg)</label><input type="number" id="v-poids" placeholder="0" step="0.5"></div>
-        <div class="form-group"><label>Prix (FCFA) *</label><input type="number" id="v-prix" placeholder="280000"></div>
-      </div>
+      <div class="form-row"><div class="form-group"><label>Téléphone</label><input type="text" id="v-tel" placeholder="+221 77..."></div><div class="form-group"><label>Date de vente *</label><input type="date" id="v-date"></div></div>
+      <div class="form-row"><div class="form-group"><label>Poids vendu (kg)</label><input type="number" id="v-poids" step="0.5" placeholder="0"></div><div class="form-group"><label>Prix (FCFA) *</label><input type="number" id="v-prix" placeholder="280000"></div></div>
+      <div class="note note-info">ℹ️ Cette action appelle <code>sp_declarer_vente</code> — le statut de l'animal passera automatiquement à « vendu » dans la base de données.</div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-vente')">Annuler</button>
-      <button class="btn btn-gold" onclick="saveVente()">💰 Confirmer la vente</button>
+    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeM('m-vente')">Annuler</button><button class="btn btn-gold" onclick="saveVente()">💰 Confirmer la vente</button></div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-ico" id="conf-ico">⚠️</div>
+    <div class="confirm-title" id="conf-title">Confirmer l'action</div>
+    <div class="confirm-msg" id="conf-msg"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost btn-full" id="conf-cancel">Annuler</button>
+      <button class="btn btn-danger btn-full" id="conf-ok">Confirmer</button>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
+<!-- TOAST STACK -->
+<div id="toast-stack"></div>
 
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- SCRIPT -->
-<!-- ══════════════════════════════════════════════════════ -->
 <script>
-const API = 'http://localhost:8002';
-let token = localStorage.getItem('bovibot_token') || '';
-let currentUser = null;
-let animauxList = [];
-let chatHistory = [];
-let pendingAction = null;
+const API='http://localhost:8002';
+let token=localStorage.getItem('bb_token')||'';
+let currentUser=null,animauxList=[],animauxAll=[],chatHistory=[],pendingAction=null;
+let chartStatus=null,chartPoids=null;
 
-// ── Helpers ──────────────────────────────────────────────
-const h = (url, opts={}) => fetch(API+url, {
-  ...opts,
-  headers: {'Content-Type':'application/json', 'Authorization':`Bearer ${token}`, ...(opts.headers||{})}
-}).then(async r => {
-  if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Erreur'); }
-  return r.json();
-});
+// ── Erreurs humaines ──
+const ERRS={'Non authentifié':'🔒 Session expirée — reconnectez-vous.','Token invalide':'🔒 Session invalide — reconnectez-vous.',"Nom d'utilisateur déjà utilisé":"👤 Ce nom d'utilisateur est pris. Choisissez-en un autre.",'Cet animal ne peut pas être vendu':'🚫 Impossible — animal déjà vendu, mort ou en quarantaine.'};
+function humanErr(msg){for(const[k,v]of Object.entries(ERRS))if(msg?.includes(k))return v;if(msg?.includes('1062'))return '⚠️ Ce numéro de tag existe déjà dans la base de données.';if(msg?.includes('1452'))return '🔗 Référence invalide — vérifiez Mère / Père.';if(msg?.includes('Failed to fetch'))return '🌐 Serveur inaccessible. Vérifiez que le backend tourne sur le port 8002.';if(msg?.includes('500'))return '⚙️ Erreur serveur. Consultez les logs du backend.';return msg||'Une erreur inattendue est survenue.';}
 
-function toast(msg, type='') {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = `toast ${type} show`;
-  setTimeout(() => t.className = 'toast', 2500);
+// ── HTTP ──
+const h=(url,opts={})=>fetch(API+url,{...opts,headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`,...(opts.headers||{})}}).then(async r=>{if(!r.ok){const e=await r.json();throw new Error(e.detail||'Erreur');}return r.json();});
+
+// ── Toast stack ──
+function toast(msg,type='',dur=3500){const s=document.getElementById('toast-stack');const d=document.createElement('div');d.className=`toast-item ${type}`;const ico={success:'✅',error:'❌',warn:'⚠️','':`💬`};d.innerHTML=`<span class="t-ico">${ico[type]||'💬'}</span><div>${msg}</div>`;s.appendChild(d);setTimeout(()=>{d.style.animation='tOut .3s ease forwards';setTimeout(()=>d.remove(),300);},dur);}
+
+// ── Confirm dialog ──
+function confirm2(ico,title,msg,okText,okClass,cb){document.getElementById('conf-ico').textContent=ico;document.getElementById('conf-title').textContent=title;document.getElementById('conf-msg').textContent=msg;const ok=document.getElementById('conf-ok');ok.textContent=okText;ok.className=`btn ${okClass} btn-full`;document.getElementById('confirm-overlay').classList.add('open');const cancel=document.getElementById('conf-cancel');ok.onclick=()=>{document.getElementById('confirm-overlay').classList.remove('open');cb(true);};cancel.onclick=()=>{document.getElementById('confirm-overlay').classList.remove('open');cb(false);};}
+
+// ── Modals ──
+function openM(id){document.getElementById(id).classList.add('open');document.getElementById('s-date').value=today();document.getElementById('v-date').value=today();}
+function closeM(id){document.getElementById(id).classList.remove('open');}
+function today(){return new Date().toISOString().split('T')[0];}
+
+// ── Conseils ──
+const TIPS=[{t:'Pesez vos veaux toutes les 2 semaines durant les 3 premiers mois — période de croissance critique.',s:'Zootechnie tropicale'},{t:'Un bovin boit 30 à 50 litres d\'eau par jour. Vérifiez l\'accès à l\'eau en saison sèche.',s:'FAO Sénégal'},{t:'Le premier signe d\'un animal malade est souvent une baisse d\'appétit. Observez chaque matin.',s:'Manuel de l\'éleveur'},{t:'Séparez les animaux malades dès les premiers symptômes pour éviter la propagation.',s:'DIREL'},{t:'Un veau alimenté en colostrum dans les 6 premières heures a 3x plus de chances de survie.',s:'ISRA'},{t:'Notez chaque comportement inhabituel : un animal couché anormalement longtemps mérite attention.',s:'Élevage & Progrès'},];
+function loadTip(){const c=TIPS[new Date().getDate()%TIPS.length];document.getElementById('conseil-txt').textContent=c.t;document.getElementById('conseil-src').textContent='— Source : '+c.s;}
+
+// ── Greeting ──
+function greet(user){const hr=new Date().getHours();const s=hr<12?'Bonjour':hr<18?'Bon après-midi':'Bonsoir';document.getElementById('greet-msg').textContent=`${s}, ${user.prenom||user.username} ! 👋`;const ms=['Voici l\'état de votre troupeau.','Votre rapport du jour est prêt.','Tout est sous surveillance — voici les dernières données.'];document.getElementById('greet-sub').textContent=ms[new Date().getDay()%ms.length];}
+
+// ── Auth ──
+function switchTab(t){document.getElementById('tab-login').style.display=t==='login'?'':'none';document.getElementById('tab-register').style.display=t==='register'?'':'none';document.querySelectorAll('.auth-tab').forEach((el,i)=>el.classList.toggle('active',(i===0&&t==='login')||(i===1&&t==='register')));}
+async function doLogin(){const u=document.getElementById('l-user').value.trim(),p=document.getElementById('l-pwd').value,e=document.getElementById('login-err');e.style.display='none';if(!u||!p){e.textContent='Renseignez votre identifiant et mot de passe.';e.style.display='block';return;}try{const d=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,mot_de_passe:p})}).then(async r=>{if(!r.ok){const x=await r.json();throw new Error(x.detail);}return r.json();});token=d.token;localStorage.setItem('bb_token',token);initApp(d.user);}catch(err){e.textContent=humanErr(err.message);e.style.display='block';}}
+async function doRegister(){const e=document.getElementById('reg-err');e.style.display='none';const b={username:document.getElementById('r-user').value.trim(),mot_de_passe:document.getElementById('r-pwd').value,nom:document.getElementById('r-nom').value.trim()||null,prenom:document.getElementById('r-prenom').value.trim()||null,nom_elevage:document.getElementById('r-elevage').value.trim()||null,telephone:document.getElementById('r-tel').value.trim()||null,localite:document.getElementById('r-loc').value.trim()||null};if(!b.username||!b.mot_de_passe){e.textContent="Nom d'utilisateur et mot de passe obligatoires.";e.style.display='block';return;}if(b.mot_de_passe.length<6){e.textContent='Mot de passe : minimum 6 caractères.';e.style.display='block';return;}try{const d=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(async r=>{if(!r.ok){const x=await r.json();throw new Error(x.detail);}return r.json();});token=d.token;localStorage.setItem('bb_token',token);initApp(d.user);}catch(err){e.textContent=humanErr(err.message);e.style.display='block';}}
+async function doLogout(){try{await h('/api/auth/logout',{method:'POST'});}catch(e){}localStorage.removeItem('bb_token');token='';currentUser=null;document.getElementById('auth-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
+async function checkAuth(){if(!token)return;try{const u=await h('/api/auth/me');initApp(u);}catch(e){localStorage.removeItem('bb_token');token='';}}
+
+function initApp(user){currentUser=user;document.getElementById('auth-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('sb-av').textContent=(user.username?.[0]||'U').toUpperCase();document.getElementById('sb-uname').textContent=user.username;document.getElementById('sb-urole').textContent=user.nom_elevage||'Élevage';greet(user);loadTip();loadDashboard();loadAnimaux();setInterval(loadDashboard,30000);}
+
+// ── Nav ──
+const PG={dashboard:['Tableau de bord',"Vue d'ensemble",null],chat:['Assistant IA','Langage naturel · MySQL live',null],animaux:['Animaux','Gestion du troupeau','Ajouter un animal'],sante:['Santé','Suivi sanitaire','Ajouter un acte'],reproduction:['Reproduction','Gestations & vêlages','Enregistrer gestation'],ventes:['Ventes','Historique','Déclarer une vente'],alertes:['Alertes','Toutes les alertes',null],profil:['Mon profil','Vos informations',null]};
+const PA={animaux:()=>openM('m-animal'),sante:()=>openM('m-sante'),reproduction:()=>openM('m-repro'),ventes:()=>openM('m-vente')};
+let curP='dashboard';
+function nav(page,el){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));document.getElementById(`pg-${page}`).classList.add('active');document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');else{document.querySelectorAll('.ni').forEach(n=>{if(n.textContent.includes(PG[page]?.[0]?.split(' ')[0]||''))n.classList.add('active');});}curP=page;const cfg=PG[page];document.getElementById('tb-title').textContent=cfg[0];document.getElementById('tb-sub').textContent=cfg[1];const btn=document.getElementById('tb-btn');if(cfg[2]){btn.textContent='+ '+cfg[2];btn.style.display='';}else btn.style.display='none';if(page==='sante')loadSante();if(page==='reproduction')loadRepro();if(page==='ventes')loadVentes();if(page==='alertes')loadAllAlerts();if(page==='profil')loadProfile();}
+function tbAct(){PA[curP]?.();}
+
+// ── Dashboard ──
+async function loadDashboard(){
+  try{const d=await h('/api/dashboard');document.getElementById('s-actifs').textContent=d.total_actifs??'—';document.getElementById('s-gest').textContent=d.en_gestation??'—';document.getElementById('s-alerts').textContent=d.alertes_actives??'—';document.getElementById('s-crit').textContent=d.alertes_critiques??'—';document.getElementById('s-males').textContent=d.males??'—';document.getElementById('s-femelles').textContent=d.femelles??'—';document.getElementById('s-ventes').textContent=d.ventes_mois??'—';document.getElementById('s-ca').textContent=Number(d.ca_mois||0).toLocaleString('fr-SN');const nb=document.getElementById('nb-al');if(d.alertes_actives>0){nb.style.display='inline-flex';nb.textContent=d.alertes_actives;}else nb.style.display='none';
+  // Chart statut
+  const total=d.total_actifs||0,vendus=d.ventes_mois||0,gest=d.en_gestation||0;
+  renderChartStatus(total,d.males||0,d.femelles||0,gest);}
+  catch(e){}
+  loadDashAlerts();loadDashGest();loadChartPoids();
 }
 
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function renderChartStatus(total,males,femelles,gest){const ctx=document.getElementById('chart-status');if(!ctx)return;if(chartStatus)chartStatus.destroy();chartStatus=new Chart(ctx,{type:'doughnut',data:{labels:['Mâles','Femelles','En gestation'],datasets:[{data:[males,femelles,gest],backgroundColor:['#1D6FA4','#C2185B','#4D8C62'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{family:'Outfit',size:11},padding:12,usePointStyle:true}}}}});}
 
-// ── AUTH ─────────────────────────────────────────────────
-function switchTab(t) {
-  document.getElementById('tab-login').style.display    = t==='login'    ? '' : 'none';
-  document.getElementById('tab-register').style.display = t==='register' ? '' : 'none';
-  document.querySelectorAll('.auth-tab').forEach((el,i) => el.classList.toggle('active', (i===0&&t==='login')||(i===1&&t==='register')));
+async function loadChartPoids(){const ctx=document.getElementById('chart-poids');if(!ctx)return;try{const data=await h('/api/animaux');if(!data.length)return;const byMonth={};data.forEach(a=>{if(a.poids_actuel){const m=new Date().getMonth();byMonth[m]=(byMonth[m]||[]);byMonth[m].push(a.poids_actuel);}});const labels=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];const now=new Date().getMonth();const last6=Array.from({length:6},(_,i)=>(now-5+i+12)%12);const vals=last6.map(m=>{const arr=data.filter(a=>a.poids_actuel).map(a=>a.poids_actuel);return arr.length?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):null;});if(chartPoids)chartPoids.destroy();chartPoids=new Chart(ctx,{type:'line',data:{labels:last6.map(m=>labels[m]),datasets:[{label:'Poids moyen (kg)',data:vals,borderColor:'#4D8C62',backgroundColor:'rgba(77,140,98,.08)',tension:.4,fill:true,pointBackgroundColor:'#4D8C62',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{family:'Outfit',size:10}}},x:{grid:{display:false},ticks:{font:{family:'Outfit',size:10}}}}}});}catch(e){}}
+
+async function loadDashAlerts(){try{const d=await h('/api/alertes');const el=document.getElementById('dash-alerts');if(!d.length){el.innerHTML='<div class="empty"><span class="empty-ico">✅</span><p>Tout est sous contrôle !</p></div>';return;}el.innerHTML=d.slice(0,6).map(a=>`<div class="alert-item ${a.niveau}">${a.animal_tag?`<span class="al-tag">${a.animal_tag}</span>`:''}<span class="al-msg">${a.message}</span><button class="al-ck" onclick="traiterAlerte(${a.id})" title="Marquer comme traitée">✓</button></div>`).join('');}catch(e){}}
+async function loadDashGest(){try{const d=await h('/api/reproduction/en-cours');const el=document.getElementById('dash-gest');if(!d.length){el.innerHTML='<div class="empty"><span class="empty-ico">🐄</span><p>Aucune gestation en cours</p></div>';return;}el.innerHTML=d.map(g=>{const total=280,remaining=Math.max(0,g.jours_restants||0);const pct=Math.round((total-remaining)/total*100);return`<div class="gest-row"><div style="flex:1"><div class="g-tags">🐄 ${g.mere_tag} × ${g.pere_tag}</div><div class="g-date">Vêlage : ${g.date_velage_prevue}</div><div class="g-bar"><div class="g-bar-fill" style="width:${pct}%"></div></div></div><span class="g-badge ${remaining<14?'gb-soon':'gb-ok'}">J-${remaining}</span></div>`;}).join('');}catch(e){}}
+async function traiterAlerte(id){try{await h(`/api/alertes/${id}/traiter`,{method:'POST'});toast('Alerte marquée comme traitée.','success');loadDashboard();loadAllAlerts();}catch(e){toast(humanErr(e.message),'error');}}
+async function loadAllAlerts(){try{const d=await h('/api/alertes');const el=document.getElementById('all-alerts');if(!d.length){el.innerHTML='<div class="empty"><span class="empty-ico">✅</span><h3>Aucune alerte active</h3><p>Votre troupeau est sous contrôle !</p></div>';return;}el.innerHTML=d.map(a=>`<div class="alert-item ${a.niveau}" style="margin-bottom:.4rem">${a.animal_tag?`<span class="al-tag">${a.animal_tag}</span>`:''}<span class="al-msg">${a.message}</span><span class="chip ch-${a.niveau==='critical'?'crit':a.niveau==='warning'?'warn':'info'}" style="margin-left:.5rem;font-size:.65rem">${a.niveau}</span><button class="al-ck" onclick="traiterAlerte(${a.id})">✓</button></div>`).join('');}catch(e){}}
+
+// ── Animaux ──
+let animauxFull=[];
+async function loadAnimaux(){try{animauxFull=await h('/api/animaux');renderAnimaux(animauxFull);populateSelects();}catch(e){toast(humanErr(e.message),'error');}}
+function filterAnimaux(){const q=document.getElementById('search-animal').value.toLowerCase();renderAnimaux(animauxFull.filter(a=>(a.numero_tag+a.nom+a.race).toLowerCase().includes(q)));}
+function renderAnimaux(list){const tb=document.getElementById('tbl-animaux');if(!list.length){tb.innerHTML='<tr><td colspan="9"><div class="empty"><span class="empty-ico">🔍</span><h3>Aucun résultat</h3><p>Essayez un autre terme de recherche.</p></div></td></tr>';return;}tb.innerHTML=list.map(a=>`<tr><td><span class="chip tag-chip">${a.numero_tag}</span></td><td>${a.nom||'—'}</td><td>${a.race||'—'}</td><td><span class="chip ch-${a.sexe}">${a.sexe==='M'?'♂ Mâle':'♀ Femelle'}</span></td><td>${a.age_mois!=null?a.age_mois+' mois':'—'}</td><td class="mono">${a.poids_actuel!=null?a.poids_actuel+' kg':'—'}</td><td class="mono ${Number(a.gmq_kg_jour)<0.3?'gmq-low':''}">${a.gmq_kg_jour!=null?(Number(a.gmq_kg_jour)*1000).toFixed(0)+' g/j':'—'}</td><td><span class="chip ch-${a.statut}">${a.statut}</span></td><td style="display:flex;gap:.3rem"><button class="btn btn-ghost btn-xs" onclick="editAnimal(${a.id})">✏️</button><button class="btn btn-danger btn-xs" onclick="delAnimal(${a.id},'${a.numero_tag}')">🗑</button></td></tr>`).join('');}
+async function populateSelects(){const races=await h('/api/races');document.getElementById('a-race').innerHTML='<option value="">—</option>'+races.map(r=>`<option value="${r.id}">${r.nom}</option>`).join('');const fem=animauxFull.filter(a=>a.sexe==='F').map(a=>`<option value="${a.id}">${a.numero_tag}${a.nom?' — '+a.nom:''}</option>`).join('');const mal=animauxFull.filter(a=>a.sexe==='M').map(a=>`<option value="${a.id}">${a.numero_tag}${a.nom?' — '+a.nom:''}</option>`).join('');const all=animauxFull.map(a=>`<option value="${a.id}">${a.numero_tag}${a.nom?' — '+a.nom:''}</option>`).join('');['a-mere','rp-mere'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">—</option>'+fem;});['a-pere','rp-pere'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">—</option>'+mal;});['s-animal','v-animal'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">— Choisir —</option>'+all;});}
+function editAnimal(id){const a=animauxFull.find(x=>x.id===id);if(!a)return;document.getElementById('m-animal-ttl').textContent='✏️ Modifier '+a.numero_tag;['a-id','a-tag','a-nom','a-nais','a-notes'].forEach(f=>{const k=f.replace('a-','');document.getElementById(f).value=a[{id:'id',tag:'numero_tag',nom:'nom',nais:'date_naissance',notes:'notes'}[k]]||'';});document.getElementById('a-nais').value=a.date_naissance?.split('T')[0]||'';document.getElementById('a-race').value=a.race_id||'';document.getElementById('a-sexe').value=a.sexe;document.getElementById('a-poids').value=a.poids_actuel||'';document.getElementById('a-statut').value=a.statut;document.getElementById('a-mere').value=a.mere_id||'';document.getElementById('a-pere').value=a.pere_id||'';document.getElementById('a-notes').value=a.notes||'';openM('m-animal');}
+async function saveAnimal(){const id=document.getElementById('a-id').value;const b={numero_tag:document.getElementById('a-tag').value.trim(),nom:document.getElementById('a-nom').value.trim()||null,race_id:parseInt(document.getElementById('a-race').value)||null,sexe:document.getElementById('a-sexe').value,date_naissance:document.getElementById('a-nais').value,poids_actuel:parseFloat(document.getElementById('a-poids').value)||null,statut:document.getElementById('a-statut').value,mere_id:parseInt(document.getElementById('a-mere').value)||null,pere_id:parseInt(document.getElementById('a-pere').value)||null,notes:document.getElementById('a-notes').value||null};
+  if(!b.numero_tag){toast('Le numéro de tag est obligatoire.','error');return;}if(!b.sexe){toast('Sélectionnez le sexe de l\'animal.','error');return;}if(!b.date_naissance){toast('La date de naissance est obligatoire.','error');return;}
+  try{if(id){await h(`/api/animaux/${id}`,{method:'PUT',body:JSON.stringify(b)});toast('Animal modifié avec succès.','success');}else{await h('/api/animaux',{method:'POST',body:JSON.stringify(b)});toast('Animal ajouté au troupeau ✅','success');}closeM('m-animal');document.getElementById('a-id').value='';document.getElementById('m-animal-ttl').textContent='🐄 Ajouter un animal';loadAnimaux();loadDashboard();}catch(e){toast(humanErr(e.message),'error');}
+}
+async function delAnimal(id,tag){confirm2('🗑️','Supprimer '+tag+' ?','Cette action supprimera définitivement l\'animal et toutes ses données associées (pesées, actes sanitaires…).','Supprimer','btn-danger',async(ok)=>{if(!ok)return;try{await h(`/api/animaux/${id}`,{method:'DELETE'});toast(`${tag} supprimé.`,'success','warn');loadAnimaux();loadDashboard();}catch(e){toast(humanErr(e.message),'error');}});}
+
+// ── Santé ──
+async function loadSante(){try{const d=await h('/api/sante');const tb=document.getElementById('tbl-sante');if(!d.length){tb.innerHTML='<tr><td colspan="8"><div class="empty"><span class="empty-ico">💉</span><h3>Aucun acte enregistré</h3><p>Ajoutez votre premier acte sanitaire.</p></div></td></tr>';return;}tb.innerHTML=d.map(s=>`<tr><td><span class="chip tag-chip">${s.numero_tag}</span></td><td><span class="chip ch-actif">${s.type}</span></td><td>${s.description}</td><td>${s.date_acte?.split('T')[0]||'—'}</td><td>${s.veterinaire||'—'}</td><td>${s.medicament||'—'}</td><td class="mono">${s.cout?Number(s.cout).toLocaleString('fr-SN')+' F':'—'}</td><td style="color:${s.prochain_rdv&&new Date(s.prochain_rdv)<new Date()?'var(--rust)':'inherit'};font-weight:${s.prochain_rdv&&new Date(s.prochain_rdv)<new Date()?'700':'400'}">${s.prochain_rdv?.split('T')[0]||'—'}</td></tr>`).join('');}catch(e){}}
+async function saveSante(){const b={animal_id:parseInt(document.getElementById('s-animal').value),type:document.getElementById('s-type').value,description:document.getElementById('s-desc').value.trim(),date_acte:document.getElementById('s-date').value,veterinaire:document.getElementById('s-vet').value.trim()||null,medicament:document.getElementById('s-med').value.trim()||null,cout:parseFloat(document.getElementById('s-cout').value)||0,prochain_rdv:document.getElementById('s-rdv').value||null};
+  if(!b.animal_id){toast('Sélectionnez un animal.','error');return;}if(!b.description){toast('La description est obligatoire.','error');return;}if(!b.date_acte){toast('La date de l\'acte est obligatoire.','error');return;}
+  try{await h('/api/sante',{method:'POST',body:JSON.stringify(b)});toast('Acte sanitaire enregistré.','success');closeM('m-sante');loadSante();loadDashboard();}catch(e){toast(humanErr(e.message),'error');}
 }
 
-async function doLogin() {
-  const username = document.getElementById('l-username').value.trim();
-  const pwd      = document.getElementById('l-pwd').value;
-  const err      = document.getElementById('login-error');
-  err.style.display = 'none';
-  if(!username || !pwd) { err.textContent = 'Remplir tous les champs'; err.style.display='block'; return; }
-  try {
-    const data = await fetch(API+'/api/auth/login', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({username, mot_de_passe: pwd})
-    }).then(async r => { if(!r.ok){const e=await r.json();throw new Error(e.detail);} return r.json(); });
-    token = data.token;
-    localStorage.setItem('bovibot_token', token);
-    initApp(data.user);
-  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+// ── Reproduction ──
+async function loadRepro(){try{const d=await h('/api/reproduction');const tb=document.getElementById('tbl-repro');if(!d.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><span class="empty-ico">🍼</span><h3>Aucune gestation enregistrée</h3><p>Enregistrez la première saillie.</p></div></td></tr>';return;}tb.innerHTML=d.map(r=>{const pct=Math.round(((280-(r.jours_restants||0))/280)*100);return`<tr><td><span class="chip tag-chip">${r.mere_tag}</span></td><td><span class="chip tag-chip">${r.pere_tag}</span></td><td>${r.date_saillie?.split('T')[0]||'—'}</td><td>${r.date_velage_prevue?.split('T')[0]||'—'}</td><td><div class="g-bar" style="width:100px"><div class="g-bar-fill" style="width:${pct}%"></div></div><div style="font-size:.65rem;color:var(--muted);margin-top:2px">${pct}%</div></td><td><span class="g-badge ${r.jours_restants<14?'gb-soon':'gb-ok'}">J-${r.jours_restants}</span></td><td><span class="chip ch-actif">${r.statut}</span></td></tr>`;}).join('');}catch(e){}}
+async function saveRepro(){const b={mere_id:parseInt(document.getElementById('rp-mere').value),pere_id:parseInt(document.getElementById('rp-pere').value),date_saillie:document.getElementById('rp-saillie').value,date_velage_prevue:document.getElementById('rp-velage').value||null,notes:document.getElementById('rp-notes').value||null};
+  if(!b.mere_id){toast('Sélectionnez la mère.','error');return;}if(!b.pere_id){toast('Sélectionnez le père.','error');return;}if(!b.date_saillie){toast('La date de saillie est obligatoire.','error');return;}
+  try{await h('/api/reproduction',{method:'POST',body:JSON.stringify(b)});toast('Gestation enregistrée avec succès.','success');closeM('m-repro');loadRepro();loadDashboard();}catch(e){toast(humanErr(e.message),'error');}
 }
 
-async function doRegister() {
-  const err = document.getElementById('reg-error');
-  err.style.display = 'none';
-  const body = {
-    nom:          document.getElementById('r-nom').value.trim(),
-    prenom:       document.getElementById('r-prenom').value.trim(),
-    username:     document.getElementById('r-username').value.trim(),
-    mot_de_passe: document.getElementById('r-pwd').value,
-    nom_elevage:  document.getElementById('r-elevage').value.trim() || null,
-    telephone:    document.getElementById('r-tel').value.trim() || null,
-    localite:     document.getElementById('r-loc').value.trim() || null,
-  };
-  if(!body.username || !body.mot_de_passe){ err.textContent="Nom d'utilisateur et mot de passe obligatoires"; err.style.display='block'; return; }
-  try {
-    const data = await fetch(API+'/api/auth/register', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
-    }).then(async r => { if(!r.ok){const e=await r.json();throw new Error(e.detail);} return r.json(); });
-    token = data.token;
-    localStorage.setItem('bovibot_token', token);
-    initApp(data.user);
-  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+// ── Ventes ──
+async function loadVentes(){try{const d=await h('/api/ventes');const tb=document.getElementById('tbl-ventes');if(!d.length){tb.innerHTML='<tr><td colspan="5"><div class="empty"><span class="empty-ico">💰</span><h3>Aucune vente enregistrée</h3><p>Déclarez votre première vente.</p></div></td></tr>';return;}tb.innerHTML=d.map(v=>`<tr><td><span class="chip tag-chip">${v.numero_tag}</span></td><td>${v.acheteur}</td><td>${v.date_vente?.split('T')[0]||'—'}</td><td class="mono">${v.poids_vente_kg?v.poids_vente_kg+' kg':'—'}</td><td class="mono" style="font-weight:700;color:var(--fern)">${Number(v.prix_fcfa).toLocaleString('fr-SN')} F</td></tr>`).join('');}catch(e){}}
+async function saveVente(){const b={animal_id:parseInt(document.getElementById('v-animal').value),acheteur:document.getElementById('v-acheteur').value.trim(),telephone:document.getElementById('v-tel').value.trim()||'',date_vente:document.getElementById('v-date').value,poids_vente_kg:parseFloat(document.getElementById('v-poids').value)||0,prix_fcfa:parseFloat(document.getElementById('v-prix').value)};
+  if(!b.animal_id){toast('Sélectionnez un animal.','error');return;}if(!b.acheteur){toast('Le nom de l\'acheteur est obligatoire.','error');return;}if(!b.date_vente){toast('La date de vente est obligatoire.','error');return;}if(!b.prix_fcfa){toast('Indiquez le prix de vente.','error');return;}
+  try{await h('/api/ventes',{method:'POST',body:JSON.stringify(b)});toast('Vente enregistrée — statut mis à jour.','success',4000);closeM('m-vente');loadVentes();loadAnimaux();loadDashboard();}catch(e){toast(humanErr(e.message),'error',5000);}
 }
 
-async function doLogout() {
-  try { await h('/api/auth/logout', {method:'POST'}); } catch(e){}
-  localStorage.removeItem('bovibot_token');
-  token = ''; currentUser = null;
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('app-screen').style.display = 'none';
+// ── Profil ──
+async function loadProfile(){if(!currentUser)return;const u=currentUser;document.getElementById('prof-av').textContent=(u.username?.[0]||'U').toUpperCase();document.getElementById('prof-name').textContent=u.prenom&&u.nom?`${u.prenom} ${u.nom}`:u.username;document.getElementById('prof-info').textContent=`@${u.username}${u.localite?' · '+u.localite:''}`;document.getElementById('prof-elevage').textContent=u.nom_elevage?'🌾 '+u.nom_elevage:'';['p-prenom','p-nom','p-elevage','p-tel','p-loc'].forEach(id=>{const key=id.replace('p-','');const map={prenom:'prenom',nom:'nom',elevage:'nom_elevage',tel:'telephone',loc:'localite'};document.getElementById(id).value=u[map[key]]||'';});}
+async function saveProfile(){const b={prenom:document.getElementById('p-prenom').value.trim()||null,nom:document.getElementById('p-nom').value.trim()||null,nom_elevage:document.getElementById('p-elevage').value.trim()||null,telephone:document.getElementById('p-tel').value.trim()||null,localite:document.getElementById('p-loc').value.trim()||null};try{await h('/api/auth/profile',{method:'PUT',body:JSON.stringify(b)});currentUser={...currentUser,...b};initApp(currentUser);toast('Profil mis à jour.','success');}catch(e){toast(humanErr(e.message),'error');}}
+
+// ── Chat ──
+function now(){return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+function ask(q){document.getElementById('chat-in').value=q;nav('chat',document.querySelectorAll('.ni')[1]);sendChat();}
+function addMsg(role,html,sql=null){const box=document.getElementById('chat-box');const d=document.createElement('div');d.className=`msg-row ${role}`;const av=role==='user'?'<div class="msg-av av-user">👤</div>':'<div class="msg-av av-bot">🐄</div>';const sqlB=sql?`<div class="sql-blk">${sql.replace(/</g,'&lt;')}</div>`:'';const time=`<div class="msg-time">${now()}</div>`;d.innerHTML=role==='user'?`${av}<div><div class="msg-bbl">${html}</div>${time}</div>`:`${av}<div><div class="msg-bbl">${html}${sqlB}</div>${time}</div>`;box.appendChild(d);box.scrollTop=box.scrollHeight;return d;}
+function addTyping(){return addMsg('bot','<div class="typing"><span></span><span></span><span></span></div>');}
+async function confirmChat(yes){document.getElementById('chat-confirm')?.remove();if(!pendingAction)return;if(yes){const L=addTyping();try{const d=await h('/api/chat',{method:'POST',body:JSON.stringify({question:'',confirm_action:true,pending_action:pendingAction})});L.remove();addMsg('bot',d.answer||'✅ Action effectuée !');pendingAction=null;loadDashboard();loadAnimaux();}catch(e){L.remove();addMsg('bot','❌ '+humanErr(e.message));}}else{addMsg('bot','Action annulée. Aucune modification effectuée.');pendingAction=null;}}
+async function sendChat(){const inp=document.getElementById('chat-in');const q=inp.value.trim();if(!q)return;inp.value='';addMsg('user',q);chatHistory.push({role:'user',content:q});const L=addTyping();document.getElementById('chat-results').style.display='none';
+  try{const d=await h('/api/chat',{method:'POST',body:JSON.stringify({question:q,history:chatHistory.slice(-6)})});L.remove();
+    if(d.type==='action_pending'){pendingAction=d.pending_action;const box=document.getElementById('chat-box');const el=document.createElement('div');el.id='chat-confirm';el.className='msg-row confirm-msg';el.innerHTML=`<div class="msg-av av-bot">🐄</div><div><div class="msg-bbl">⚠️ <strong>Confirmation requise</strong><br><br>${d.confirmation}<div class="confirm-row"><button class="btn-yes" onclick="confirmChat(true)">✅ Confirmer</button><button class="btn-no" onclick="confirmChat(false)">❌ Annuler</button></div></div><div class="msg-time">${now()}</div></div>`;box.appendChild(el);box.scrollTop=box.scrollHeight;}
+    else{const cnt=d.count!=null?` <span style="font-size:.7rem;opacity:.6">(${d.count} résultat${d.count>1?'s':''})</span>`:'';addMsg('bot',(d.answer||'')+cnt,d.sql);chatHistory.push({role:'assistant',content:d.answer||''});}
+    if(d.data?.length>0){const s=document.getElementById('chat-results');s.style.display='block';document.getElementById('res-count').textContent=d.data.length+' ligne'+(d.data.length>1?'s':'');const keys=Object.keys(d.data[0]);document.getElementById('res-thead').innerHTML='<tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr>';document.getElementById('res-tbody').innerHTML=d.data.map(row=>'<tr>'+keys.map(k=>`<td>${row[k]??''}</td>`).join('')+'</tr>').join('');}
+  }catch(e){L.remove();addMsg('bot','❌ '+humanErr(e.message));}
 }
 
-// ── APP INIT ─────────────────────────────────────────────
-async function checkAuth() {
-  if (!token) return;
-  try {
-    const user = await h('/api/auth/me');
-    initApp(user);
-  } catch(e) { localStorage.removeItem('bovibot_token'); token = ''; }
-}
-
-function initApp(user) {
-  currentUser = user;
-  document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display = 'block';
-  const initials = user.prenom && user.nom
-    ? (user.prenom[0] + user.nom[0]).toUpperCase()
-    : (user.username?.[0] || 'U').toUpperCase();
-  document.getElementById('sb-avatar').textContent = initials;
-  const displayName = user.prenom && user.nom ? `${user.prenom} ${user.nom}` : user.username;
-  document.getElementById('sb-username').textContent = user.username || displayName;
-  document.getElementById('sb-elevage').textContent = user.nom_elevage || `${user.prenom||''} ${user.nom||''}`.trim() || 'Élevage';
-  loadDashboard();
-  loadAnimaux();
-  setInterval(loadDashboard, 30000);
-}
-
-// ── NAVIGATION ───────────────────────────────────────────
-const pageConfig = {
-  dashboard:    ['Tableau de bord', 'Vue d\'ensemble du troupeau', null],
-  chat:         ['Assistant IA', 'Posez vos questions en langage naturel', null],
-  animaux:      ['Animaux', 'Gestion du troupeau', 'Ajouter un animal'],
-  sante:        ['Santé', 'Suivi sanitaire', 'Ajouter un acte'],
-  reproduction: ['Reproduction', 'Gestations & vêlages', 'Enregistrer'],
-  ventes:       ['Ventes', 'Historique des ventes', 'Déclarer une vente'],
-  alertes:      ['Alertes', 'Toutes les alertes du système', null],
-  profil:       ['Mon profil', 'Gérer vos informations', null],
-};
-const tbActionMap = {
-  animaux: () => openModal('modal-animal'),
-  sante:   () => openModal('modal-sante'),
-  reproduction: () => openModal('modal-repro'),
-  ventes:  () => openModal('modal-vente'),
-};
-
-let currentPage = 'dashboard';
-function nav(page, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  if(el) el.classList.add('active');
-  currentPage = page;
-  const cfg = pageConfig[page];
-  document.getElementById('tb-title').textContent = cfg[0];
-  document.getElementById('tb-sub').textContent   = cfg[1];
-  const btn = document.getElementById('tb-action-btn');
-  if(cfg[2]) { btn.textContent = '+ ' + cfg[2]; btn.style.display = ''; }
-  else btn.style.display = 'none';
-  if(page==='sante') loadSante();
-  if(page==='reproduction') loadRepro();
-  if(page==='ventes') loadVentes();
-  if(page==='alertes') loadAllAlertes();
-  if(page==='profil') loadProfile();
-}
-function tbAction() { tbActionMap[currentPage]?.(); }
-
-// ── DASHBOARD ─────────────────────────────────────────────
-async function loadDashboard() {
-  try {
-    const d = await h('/api/dashboard');
-    document.getElementById('s-actifs').textContent   = d.total_actifs    ?? '—';
-    document.getElementById('s-gest').textContent     = d.en_gestation    ?? '—';
-    document.getElementById('s-alerts').textContent   = d.alertes_actives ?? '—';
-    document.getElementById('s-crit').textContent     = d.alertes_critiques ?? '—';
-    document.getElementById('s-males').textContent    = d.males   ?? '—';
-    document.getElementById('s-femelles').textContent = d.femelles ?? '—';
-    document.getElementById('s-ventes').textContent   = d.ventes_mois ?? '—';
-    document.getElementById('s-ca').textContent       = Number(d.ca_mois||0).toLocaleString('fr-SN');
-    const nb = document.getElementById('nb-alertes');
-    if(d.alertes_actives>0){ nb.style.display='inline-flex'; nb.textContent=d.alertes_actives; }
-    else nb.style.display='none';
-  } catch(e){}
-  loadDashAlertes();
-  loadDashGest();
-}
-
-async function loadDashAlertes() {
-  try {
-    const data = await h('/api/alertes');
-    const el = document.getElementById('dash-alertes');
-    if(!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><p>Aucune alerte active</p></div>'; return; }
-    el.innerHTML = data.slice(0,6).map(a=>`
-      <div class="alert-item ${a.niveau}">
-        ${a.animal_tag?`<span class="alert-tag">${a.animal_tag}</span>`:''}
-        <span class="alert-msg">${a.message}</span>
-        <button class="alert-ck" onclick="traiterAlerte(${a.id})">✓</button>
-      </div>`).join('');
-  } catch(e){}
-}
-
-async function loadDashGest() {
-  try {
-    const data = await h('/api/reproduction/en-cours');
-    const el = document.getElementById('dash-gest');
-    if(!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">🐄</div><p>Aucune gestation en cours</p></div>'; return; }
-    el.innerHTML = data.map(g=>`
-      <div class="gest-row">
-        <div>
-          <div class="gest-ids">🐄 ${g.mere_tag} × ${g.pere_tag}</div>
-          <div class="gest-date">Vêlage : ${g.date_velage_prevue}</div>
-        </div>
-        <span class="gest-j ${g.jours_restants<14?'soon':'ok'}">J-${g.jours_restants}</span>
-      </div>`).join('');
-  } catch(e){}
-}
-
-async function traiterAlerte(id) {
-  await h(`/api/alertes/${id}/traiter`, {method:'POST'});
-  loadDashboard(); loadAllAlertes();
-  toast('Alerte traitée', 'success');
-}
-
-async function loadAllAlertes() {
-  try {
-    const data = await h('/api/alertes');
-    const el = document.getElementById('all-alertes');
-    if(!data.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><p>Aucune alerte active</p></div>'; return; }
-    el.innerHTML = data.map(a=>`
-      <div class="alert-item ${a.niveau}" style="margin-bottom:.4rem">
-        ${a.animal_tag?`<span class="alert-tag">${a.animal_tag}</span>`:''}
-        <span class="alert-msg">${a.message}</span>
-        <span class="badge badge-${a.niveau}" style="margin-left:.4rem">${a.niveau}</span>
-        <button class="alert-ck" onclick="traiterAlerte(${a.id})">✓</button>
-      </div>`).join('');
-  } catch(e){}
-}
-
-// ── ANIMAUX ──────────────────────────────────────────────
-async function loadAnimaux() {
-  try {
-    animauxList = await h('/api/animaux');
-    const tb = document.getElementById('tbl-animaux');
-    if(!animauxList.length){ tb.innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🐄</div><p>Aucun animal enregistré</p></div></td></tr>'; return; }
-    tb.innerHTML = animauxList.map(a=>`
-      <tr>
-        <td><span class="tag-chip">${a.numero_tag}</span></td>
-        <td>${a.nom||'—'}</td>
-        <td>${a.race||'—'}</td>
-        <td><span class="badge badge-${a.sexe}">${a.sexe==='M'?'♂ Mâle':'♀ Femelle'}</span></td>
-        <td>${a.age_mois!=null?a.age_mois+' mois':'—'}</td>
-        <td class="mono">${a.poids_actuel!=null?a.poids_actuel+' kg':'—'}</td>
-        <td class="mono">${a.gmq_kg_jour!=null?(Number(a.gmq_kg_jour)*1000).toFixed(0)+' g/j':'—'}</td>
-        <td><span class="badge badge-${a.statut}">${a.statut}</span></td>
-        <td>
-          <button class="btn btn-ghost btn-sm" onclick="editAnimal(${a.id})">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteAnimal(${a.id},'${a.numero_tag}')">🗑</button>
-        </td>
-      </tr>`).join('');
-    populateSelects();
-  } catch(e){}
-}
-
-async function populateSelects() {
-  const races = await h('/api/races');
-  const raceOpts = races.map(r=>`<option value="${r.id}">${r.nom}</option>`).join('');
-  document.getElementById('a-race').innerHTML = '<option value="">—</option>' + raceOpts;
-
-  const animalOpts = animauxList.map(a=>`<option value="${a.id}">${a.numero_tag}${a.nom?' — '+a.nom:''}</option>`).join('');
-  const femOpts = animauxList.filter(a=>a.sexe==='F').map(a=>`<option value="${a.id}">${a.numero_tag}</option>`).join('');
-  const malOpts = animauxList.filter(a=>a.sexe==='M').map(a=>`<option value="${a.id}">${a.numero_tag}</option>`).join('');
-  ['a-mere'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML='<option value="">—</option>'+femOpts; });
-  ['a-pere'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML='<option value="">—</option>'+malOpts; });
-  ['s-animal','v-animal'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML='<option value="">—</option>'+animalOpts; });
-  ['rp-mere'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML='<option value="">—</option>'+femOpts; });
-  ['rp-pere'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML='<option value="">—</option>'+malOpts; });
-}
-
-function editAnimal(id) {
-  const a = animauxList.find(x=>x.id===id);
-  if(!a) return;
-  document.getElementById('modal-animal-title').textContent = '✏️ Modifier ' + a.numero_tag;
-  document.getElementById('a-id').value     = a.id;
-  document.getElementById('a-tag').value    = a.numero_tag;
-  document.getElementById('a-nom').value    = a.nom||'';
-  document.getElementById('a-race').value   = a.race_id||'';
-  document.getElementById('a-sexe').value   = a.sexe;
-  document.getElementById('a-nais').value   = a.date_naissance?.split('T')[0]||'';
-  document.getElementById('a-poids').value  = a.poids_actuel||'';
-  document.getElementById('a-statut').value = a.statut;
-  document.getElementById('a-mere').value   = a.mere_id||'';
-  document.getElementById('a-pere').value   = a.pere_id||'';
-  document.getElementById('a-notes').value  = a.notes||'';
-  openModal('modal-animal');
-}
-
-async function saveAnimal() {
-  const id = document.getElementById('a-id').value;
-  const body = {
-    numero_tag:    document.getElementById('a-tag').value.trim(),
-    nom:           document.getElementById('a-nom').value.trim()||null,
-    race_id:       parseInt(document.getElementById('a-race').value)||null,
-    sexe:          document.getElementById('a-sexe').value,
-    date_naissance:document.getElementById('a-nais').value,
-    poids_actuel:  parseFloat(document.getElementById('a-poids').value)||null,
-    statut:        document.getElementById('a-statut').value,
-    mere_id:       parseInt(document.getElementById('a-mere').value)||null,
-    pere_id:       parseInt(document.getElementById('a-pere').value)||null,
-    notes:         document.getElementById('a-notes').value||null,
-  };
-  if(!body.numero_tag||!body.sexe||!body.date_naissance){ toast('Remplir les champs obligatoires','error'); return; }
-  try {
-    if(id) { await h(`/api/animaux/${id}`, {method:'PUT', body:JSON.stringify(body)}); toast('Animal modifié','success'); }
-    else   { await h('/api/animaux', {method:'POST', body:JSON.stringify(body)}); toast('Animal ajouté ✅','success'); }
-    closeModal('modal-animal');
-    document.getElementById('a-id').value = '';
-    document.getElementById('modal-animal-title').textContent = '🐄 Ajouter un animal';
-    loadAnimaux();
-    loadDashboard(); // ← refresh dashboard immédiat
-  } catch(e){ toast(e.message,'error'); }
-}
-
-async function deleteAnimal(id, tag) {
-  if(!confirm(`Supprimer l'animal ${tag} ? Cette action est irréversible.`)) return;
-  try {
-    await h(`/api/animaux/${id}`, {method:'DELETE'});
-    toast(`${tag} supprimé`,'success');
-    loadAnimaux();
-    loadDashboard(); // ← refresh dashboard immédiat
-  } catch(e){ toast(e.message,'error'); }
-}
-
-// ── SANTÉ ────────────────────────────────────────────────
-async function loadSante() {
-  try {
-    const data = await h('/api/sante');
-    const tb = document.getElementById('tbl-sante');
-    if(!data.length){ tb.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">💉</div><p>Aucun acte enregistré</p></div></td></tr>'; return; }
-    tb.innerHTML = data.map(s=>`
-      <tr>
-        <td><span class="tag-chip">${s.numero_tag}</span></td>
-        <td><span class="badge badge-${s.type==='vaccination'?'actif':s.type==='traitement'?'warning':'info'}">${s.type}</span></td>
-        <td>${s.description}</td>
-        <td>${s.date_acte?.split('T')[0]||'—'}</td>
-        <td>${s.veterinaire||'—'}</td>
-        <td>${s.medicament||'—'}</td>
-        <td class="mono">${s.cout?Number(s.cout).toLocaleString('fr-SN')+' FCFA':'—'}</td>
-        <td>${s.prochain_rdv?.split('T')[0]||'—'}</td>
-      </tr>`).join('');
-  } catch(e){}
-}
-
-async function saveSante() {
-  const body = {
-    animal_id:   parseInt(document.getElementById('s-animal').value),
-    type:        document.getElementById('s-type').value,
-    description: document.getElementById('s-desc').value.trim(),
-    date_acte:   document.getElementById('s-date').value,
-    veterinaire: document.getElementById('s-vet').value.trim()||null,
-    medicament:  document.getElementById('s-med').value.trim()||null,
-    cout:        parseFloat(document.getElementById('s-cout').value)||0,
-    prochain_rdv:document.getElementById('s-rdv').value||null,
-  };
-  if(!body.animal_id||!body.description||!body.date_acte){ toast('Champs obligatoires manquants','error'); return; }
-  try {
-    await h('/api/sante', {method:'POST', body:JSON.stringify(body)});
-    toast('Acte sanitaire enregistré ✅','success');
-    closeModal('modal-sante');
-    loadSante();
-    loadDashboard(); // ← alertes vaccination se mettent à jour
-  } catch(e){ toast(e.message,'error'); }
-}
-
-// ── REPRODUCTION ─────────────────────────────────────────
-async function loadRepro() {
-  try {
-    const data = await h('/api/reproduction');
-    const tb = document.getElementById('tbl-repro');
-    if(!data.length){ tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">🍼</div><p>Aucune gestation enregistrée</p></div></td></tr>'; return; }
-    tb.innerHTML = data.map(r=>`
-      <tr>
-        <td><span class="tag-chip">${r.mere_tag}</span></td>
-        <td><span class="tag-chip">${r.pere_tag}</span></td>
-        <td>${r.date_saillie?.split('T')[0]||'—'}</td>
-        <td>${r.date_velage_prevue?.split('T')[0]||'—'}</td>
-        <td><span class="gest-j ${r.jours_restants<14?'soon':'ok'}">J-${r.jours_restants}</span></td>
-        <td><span class="badge badge-${r.statut==='en_gestation'?'actif':'info'}">${r.statut}</span></td>
-      </tr>`).join('');
-  } catch(e){}
-}
-
-async function saveRepro() {
-  const body = {
-    mere_id:           parseInt(document.getElementById('rp-mere').value),
-    pere_id:           parseInt(document.getElementById('rp-pere').value),
-    date_saillie:      document.getElementById('rp-saillie').value,
-    date_velage_prevue:document.getElementById('rp-velage').value||null,
-    notes:             document.getElementById('rp-notes').value||null,
-  };
-  if(!body.mere_id||!body.pere_id||!body.date_saillie){ toast('Champs obligatoires manquants','error'); return; }
-  try {
-    await h('/api/reproduction', {method:'POST', body:JSON.stringify(body)});
-    toast('Gestation enregistrée ✅','success');
-    closeModal('modal-repro');
-    loadRepro();
-    loadDashboard(); // ← gestation en cours mise à jour
-  } catch(e){ toast(e.message,'error'); }
-}
-
-// ── VENTES ───────────────────────────────────────────────
-async function loadVentes() {
-  try {
-    const data = await h('/api/ventes');
-    const tb = document.getElementById('tbl-ventes');
-    if(!data.length){ tb.innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">💰</div><p>Aucune vente enregistrée</p></div></td></tr>'; return; }
-    tb.innerHTML = data.map(v=>`
-      <tr>
-        <td><span class="tag-chip">${v.numero_tag}</span></td>
-        <td>${v.acheteur}</td>
-        <td>${v.date_vente?.split('T')[0]||'—'}</td>
-        <td class="mono">${v.poids_vente_kg?v.poids_vente_kg+' kg':'—'}</td>
-        <td class="mono">${Number(v.prix_fcfa).toLocaleString('fr-SN')} FCFA</td>
-      </tr>`).join('');
-  } catch(e){}
-}
-
-async function saveVente() {
-  const body = {
-    animal_id:    parseInt(document.getElementById('v-animal').value),
-    acheteur:     document.getElementById('v-acheteur').value.trim(),
-    telephone:    document.getElementById('v-tel').value.trim()||'',
-    date_vente:   document.getElementById('v-date').value,
-    poids_vente_kg: parseFloat(document.getElementById('v-poids').value)||0,
-    prix_fcfa:    parseFloat(document.getElementById('v-prix').value),
-  };
-  if(!body.animal_id||!body.acheteur||!body.date_vente||!body.prix_fcfa){ toast('Champs obligatoires manquants','error'); return; }
-  try {
-    await h('/api/ventes', {method:'POST', body:JSON.stringify(body)});
-    toast('Vente enregistrée via sp_declarer_vente ✅','success');
-    closeModal('modal-vente');
-    loadVentes(); loadDashboard(); loadAnimaux();
-  } catch(e){ toast(e.message,'error'); }
-}
-
-// ── PROFIL ───────────────────────────────────────────────
-async function loadProfile() {
-  if(!currentUser) return;
-  const u = currentUser;
-  const initials = (u.prenom?.[0]||'')+(u.nom?.[0]||'');
-  document.getElementById('prof-av').textContent    = initials.toUpperCase();
-  document.getElementById('prof-name').textContent  = `${u.prenom} ${u.nom}`;
-  document.getElementById('prof-email').textContent = u.email;
-  document.getElementById('prof-elevage').textContent = u.nom_elevage ? `🌾 ${u.nom_elevage}` : '';
-  document.getElementById('p-prenom').value  = u.prenom||'';
-  document.getElementById('p-nom').value     = u.nom||'';
-  document.getElementById('p-elevage').value = u.nom_elevage||'';
-  document.getElementById('p-tel').value     = u.telephone||'';
-  document.getElementById('p-loc').value     = u.localite||'';
-}
-
-async function saveProfile() {
-  const body = {
-    prenom:      document.getElementById('p-prenom').value.trim(),
-    nom:         document.getElementById('p-nom').value.trim(),
-    nom_elevage: document.getElementById('p-elevage').value.trim()||null,
-    telephone:   document.getElementById('p-tel').value.trim()||null,
-    localite:    document.getElementById('p-loc').value.trim()||null,
-  };
-  try {
-    await h('/api/auth/profile', {method:'PUT', body:JSON.stringify(body)});
-    currentUser = {...currentUser, ...body};
-    initApp(currentUser);
-    toast('Profil mis à jour ✅','success');
-  } catch(e){ toast(e.message,'error'); }
-}
-
-// ── CHAT ─────────────────────────────────────────────────
-function ask(q){ document.getElementById('chat-in').value=q; sendChat(); }
-
-function addMsg(role, html, sql=null){
-  const box = document.getElementById('chat-box');
-  const d = document.createElement('div');
-  d.className = `msg-row ${role}`;
-  const av = role==='user' ? '<div class="msg-av av-user">👤</div>' : '<div class="msg-av av-bot">🐄</div>';
-  const sqlB = sql ? `<div class="sql-blk">${sql.replace(/</g,'&lt;')}</div>` : '';
-  d.innerHTML = role==='user'
-    ? `${av}<div class="msg-bbl">${html}</div>`
-    : `${av}<div class="msg-bbl">${html}${sqlB}</div>`;
-  box.appendChild(d);
-  box.scrollTop = box.scrollHeight;
-  return d;
-}
-
-function addTyping(){ return addMsg('bot','<div class="typing"><span></span><span></span><span></span></div>'); }
-
-async function confirmChat(yes){
-  document.getElementById('confirm-div')?.remove();
-  if(!pendingAction) return;
-  if(yes){
-    const L = addTyping();
-    try {
-      const data = await h('/api/chat',{method:'POST',body:JSON.stringify({question:'',confirm_action:true,pending_action:pendingAction})});
-      L.remove(); addMsg('bot', data.answer||'✅ Action effectuée !');
-      pendingAction = null; loadDashboard(); loadAnimaux();
-    } catch(e){ L.remove(); addMsg('bot','❌ Erreur : '+e.message); }
-  } else {
-    addMsg('bot','❌ Action annulée.');
-    pendingAction = null;
-  }
-}
-
-async function sendChat(){
-  const inp = document.getElementById('chat-in');
-  const q = inp.value.trim();
-  if(!q) return;
-  inp.value = '';
-  nav('chat', document.querySelectorAll('.nav-item')[1]);
-  addMsg('user', q);
-  chatHistory.push({role:'user',content:q});
-  const L = addTyping();
-  try {
-    const data = await h('/api/chat',{method:'POST',body:JSON.stringify({question:q,history:chatHistory.slice(-6)})});
-    L.remove();
-    if(data.type==='action_pending'){
-      pendingAction = data.pending_action;
-      const box = document.getElementById('chat-box');
-      const d = document.createElement('div');
-      d.id='confirm-div'; d.className='msg-row confirm';
-      d.innerHTML=`<div class="msg-av av-bot">🐄</div><div class="msg-bbl">⚠️ ${data.confirmation}<div class="confirm-row"><button class="btn-yes" onclick="confirmChat(true)">✅ Confirmer</button><button class="btn-no" onclick="confirmChat(false)">❌ Annuler</button></div></div>`;
-      box.appendChild(d); box.scrollTop=box.scrollHeight;
-    } else {
-      const cnt = data.count!=null ? ` <span style="font-size:.72rem;opacity:.6">(${data.count} résultat${data.count>1?'s':''})</span>` : '';
-      addMsg('bot',(data.answer||'')+cnt, data.sql);
-      chatHistory.push({role:'assistant',content:data.answer||''});
-    }
-    if(data.data?.length>0){
-      const sec = document.getElementById('chat-results');
-      sec.style.display='block';
-      document.getElementById('res-count').textContent = data.data.length+' ligne'+(data.data.length>1?'s':'');
-      const keys = Object.keys(data.data[0]);
-      document.getElementById('res-thead').innerHTML = '<tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr>';
-      document.getElementById('res-tbody').innerHTML = data.data.map(row=>'<tr>'+keys.map(k=>`<td>${row[k]??''}</td>`).join('')+'</tr>').join('');
-    }
-  } catch(e){ L.remove(); addMsg('bot','❌ Erreur de connexion.'); }
-}
-
-// ── BOOT ─────────────────────────────────────────────────
 checkAuth();
 </script>
 </body>
