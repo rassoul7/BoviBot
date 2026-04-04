@@ -1,21 +1,17 @@
--- ============================================================
---  BoviBot — Ajout table utilisateurs
---  À exécuter APRÈS schema.sql
--- ============================================================
-
 USE bovibot;
 
 CREATE TABLE IF NOT EXISTS utilisateurs (
-    id            INT AUTO_INCREMENT PRIMARY KEY,
-    nom           VARCHAR(100) NOT NULL,
-    prenom        VARCHAR(100) NOT NULL,
-    email         VARCHAR(150) NOT NULL UNIQUE,
-    mot_de_passe  VARCHAR(255) NOT NULL,
-    nom_elevage   VARCHAR(200),
-    telephone     VARCHAR(20),
-    localite      VARCHAR(100),
-    role          ENUM('admin','eleveur') DEFAULT 'eleveur',
-    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    nom          VARCHAR(100),
+    prenom       VARCHAR(100),
+    username     VARCHAR(100) NOT NULL UNIQUE,
+    email        VARCHAR(150) NULL,
+    mot_de_passe VARCHAR(255) NOT NULL,
+    nom_elevage  VARCHAR(200),
+    telephone    VARCHAR(20),
+    localite     VARCHAR(100),
+    role         ENUM('admin','eleveur') DEFAULT 'eleveur',
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS tokens (
@@ -25,6 +21,6 @@ CREATE TABLE IF NOT EXISTS tokens (
     FOREIGN KEY (user_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
 
--- Lier les animaux à un utilisateur (optionnel pour la démo)
-ALTER TABLE animaux ADD COLUMN IF NOT EXISTS user_id INT NULL,
-    ADD FOREIGN KEY (user_id) REFERENCES utilisateurs(id);
+ALTER TABLE animaux
+    ADD COLUMN IF NOT EXISTS user_id INT NULL,
+    ADD FOREIGN KEY IF NOT EXISTS (user_id) REFERENCES utilisateurs(id);

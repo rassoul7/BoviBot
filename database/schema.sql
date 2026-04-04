@@ -268,6 +268,34 @@ BEGIN
     END IF;
 END$$
 
+-- 1. Alerte perte de poids
+CREATE TRIGGER trg_alerte_perte_poids
+AFTER INSERT ON pesees
+FOR EACH ROW
+BEGIN
+    DECLARE v_derniere DECIMAL(6,2);
+    SELECT poids_kg INTO v_derniere FROM pesees
+    WHERE animal_id = NEW.animal_id AND date_pesee < NEW.date_pesee
+    ORDER BY date_pesee DESC LIMIT 1;
+    IF v_derniere IS NOT NULL AND NEW.poids_kg < v_derniere THEN
+        INSERT INTO alertes (animal_id, type, message, niveau)
+        VALUES (NEW.animal_id, 'poids',
+            CONCAT('Perte de poids : ', v_derniere, ' → ', NEW.poids_kg, ' kg'),
+            'warning');
+    END IF;
+END$$
+
+-- 2. Alerte vente enregistrée
+CREATE TRIGGER trg_info_vente
+AFTER INSERT ON ventes
+FOR EACH ROW
+BEGIN
+    INSERT INTO alertes (animal_id, type, message, niveau)
+    VALUES (NEW.animal_id, 'autre',
+        CONCAT('Vente enregistrée : ', FORMAT(NEW.prix_fcfa, 0), ' FCFA — Acheteur : ', NEW.acheteur),
+        'info');
+END$$
+
 DELIMITER ;
 
 -- ─── EVENTS (MySQL Event Scheduler) ──────────────────────────
@@ -313,6 +341,28 @@ BEGIN
     VALUES (NULL, 'autre',
         CONCAT('Rapport hebdo : ', v_nb_animaux, ' animaux actifs. Consultez le tableau de bord pour les détails.'),
         'info');
+END$$
+
+CREATE EVENT evt_alerte_pesee_manquante
+ON SCHEDULE EVERY 1 DAY
+STARTS CURRENT_TIMESTAMP
+DO
+BEGIN
+    INSERT INTO alertes (animal_id, type, message, niveau)
+    SELECT a.id, 'poids',
+        CONCAT(a.numero_tag, ' — Aucune pesée depuis plus de 60 jours'),
+        'warning'
+    FROM animaux a
+    WHERE a.statut = 'actif'
+    AND (
+        SELECT MAX(date_pesee) FROM pesees WHERE animal_id = a.id
+    ) < DATE_SUB(CURDATE(), INTERVAL 60 DAY)
+    AND NOT EXISTS (
+        SELECT 1 FROM alertes al
+        WHERE al.animal_id = a.id
+        AND al.message LIKE '%60 jours%'
+        AND DATE(al.date_creation) = CURDATE()
+    );
 END$$
 
 DELIMITER ;

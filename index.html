@@ -547,7 +547,7 @@ tbody tr:hover td { background: var(--offwhite); }
       <h2 class="auth-form-title">Bon retour 👋</h2>
       <p class="auth-form-sub">Connectez-vous à votre espace élevage</p>
       <div id="login-error" class="auth-error"></div>
-      <div class="form-group"><label>Email</label><input type="email" id="l-email" placeholder="vous@exemple.com"></div>
+      <div class="form-group"><label>Nom d'utilisateur</label><input type="text" id="l-username" placeholder="ex: diallo_elevage"></div>
       <div class="form-group"><label>Mot de passe</label><input type="password" id="l-pwd" placeholder="••••••••" onkeypress="if(event.key==='Enter')doLogin()"></div>
       <button class="btn btn-primary btn-full" onclick="doLogin()">Se connecter</button>
     </div>
@@ -561,7 +561,7 @@ tbody tr:hover td { background: var(--offwhite); }
         <div class="form-group"><label>Prénom</label><input type="text" id="r-prenom" placeholder="Mouhamadou"></div>
         <div class="form-group"><label>Nom</label><input type="text" id="r-nom" placeholder="Diallo"></div>
       </div>
-      <div class="form-group"><label>Email</label><input type="email" id="r-email" placeholder="vous@exemple.com"></div>
+      <div class="form-group"><label>Nom d'utilisateur *</label><input type="text" id="r-username" placeholder="ex: diallo_elevage"></div>
       <div class="form-group"><label>Mot de passe</label><input type="password" id="r-pwd" placeholder="Minimum 6 caractères"></div>
       <div class="form-group"><label>Nom de l'élevage <span style="font-weight:300;text-transform:none">(optionnel)</span></label><input type="text" id="r-elevage" placeholder="Élevage Diallo & Fils"></div>
       <div class="form-row">
@@ -975,14 +975,15 @@ function switchTab(t) {
 }
 
 async function doLogin() {
-  const email = document.getElementById('l-email').value.trim();
-  const pwd   = document.getElementById('l-pwd').value;
-  const err   = document.getElementById('login-error');
+  const username = document.getElementById('l-username').value.trim();
+  const pwd      = document.getElementById('l-pwd').value;
+  const err      = document.getElementById('login-error');
   err.style.display = 'none';
+  if(!username || !pwd) { err.textContent = 'Remplir tous les champs'; err.style.display='block'; return; }
   try {
     const data = await fetch(API+'/api/auth/login', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email, mot_de_passe: pwd})
+      body: JSON.stringify({username, mot_de_passe: pwd})
     }).then(async r => { if(!r.ok){const e=await r.json();throw new Error(e.detail);} return r.json(); });
     token = data.token;
     localStorage.setItem('bovibot_token', token);
@@ -994,15 +995,15 @@ async function doRegister() {
   const err = document.getElementById('reg-error');
   err.style.display = 'none';
   const body = {
-    nom: document.getElementById('r-nom').value.trim(),
-    prenom: document.getElementById('r-prenom').value.trim(),
-    email: document.getElementById('r-email').value.trim(),
+    nom:          document.getElementById('r-nom').value.trim(),
+    prenom:       document.getElementById('r-prenom').value.trim(),
+    username:     document.getElementById('r-username').value.trim(),
     mot_de_passe: document.getElementById('r-pwd').value,
-    nom_elevage: document.getElementById('r-elevage').value.trim() || null,
-    telephone: document.getElementById('r-tel').value.trim() || null,
-    localite: document.getElementById('r-loc').value.trim() || null,
+    nom_elevage:  document.getElementById('r-elevage').value.trim() || null,
+    telephone:    document.getElementById('r-tel').value.trim() || null,
+    localite:     document.getElementById('r-loc').value.trim() || null,
   };
-  if(!body.nom||!body.prenom||!body.email||!body.mot_de_passe){ err.textContent='Veuillez remplir tous les champs obligatoires'; err.style.display='block'; return; }
+  if(!body.username || !body.mot_de_passe){ err.textContent="Nom d'utilisateur et mot de passe obligatoires"; err.style.display='block'; return; }
   try {
     const data = await fetch(API+'/api/auth/register', {
       method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
@@ -1034,10 +1035,13 @@ function initApp(user) {
   currentUser = user;
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
-  const initials = (user.prenom?.[0]||'') + (user.nom?.[0]||'');
-  document.getElementById('sb-avatar').textContent = initials.toUpperCase();
-  document.getElementById('sb-username').textContent = `${user.prenom} ${user.nom}`;
-  document.getElementById('sb-elevage').textContent = user.nom_elevage || 'Élevage';
+  const initials = user.prenom && user.nom
+    ? (user.prenom[0] + user.nom[0]).toUpperCase()
+    : (user.username?.[0] || 'U').toUpperCase();
+  document.getElementById('sb-avatar').textContent = initials;
+  const displayName = user.prenom && user.nom ? `${user.prenom} ${user.nom}` : user.username;
+  document.getElementById('sb-username').textContent = user.username || displayName;
+  document.getElementById('sb-elevage').textContent = user.nom_elevage || `${user.prenom||''} ${user.nom||''}`.trim() || 'Élevage';
   loadDashboard();
   loadAnimaux();
   setInterval(loadDashboard, 30000);
@@ -1233,6 +1237,7 @@ async function saveAnimal() {
     document.getElementById('a-id').value = '';
     document.getElementById('modal-animal-title').textContent = '🐄 Ajouter un animal';
     loadAnimaux();
+    loadDashboard(); // ← refresh dashboard immédiat
   } catch(e){ toast(e.message,'error'); }
 }
 
@@ -1242,6 +1247,7 @@ async function deleteAnimal(id, tag) {
     await h(`/api/animaux/${id}`, {method:'DELETE'});
     toast(`${tag} supprimé`,'success');
     loadAnimaux();
+    loadDashboard(); // ← refresh dashboard immédiat
   } catch(e){ toast(e.message,'error'); }
 }
 
@@ -1282,6 +1288,7 @@ async function saveSante() {
     toast('Acte sanitaire enregistré ✅','success');
     closeModal('modal-sante');
     loadSante();
+    loadDashboard(); // ← alertes vaccination se mettent à jour
   } catch(e){ toast(e.message,'error'); }
 }
 
@@ -1317,6 +1324,7 @@ async function saveRepro() {
     toast('Gestation enregistrée ✅','success');
     closeModal('modal-repro');
     loadRepro();
+    loadDashboard(); // ← gestation en cours mise à jour
   } catch(e){ toast(e.message,'error'); }
 }
 

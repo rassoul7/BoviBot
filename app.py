@@ -11,8 +11,12 @@ from typing import Optional
 import mysql.connector
 import os, re, json, httpx, hashlib, secrets
 from datetime import date
+from dotenv import load_dotenv 
+
+load_dotenv()
 
 app = FastAPI(title="BoviBot API", version="2.0.0")
+
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # ── Config ─────────────────────────────────────────────────
@@ -127,13 +131,17 @@ def call_proc(name: str, params: dict):
 # AUTH
 # ══════════════════════════════════════════════════════════════
 class RegisterIn(BaseModel):
-    nom: str; prenom: str; email: str; mot_de_passe: str
-    nom_elevage: Optional[str] = None
-    telephone: Optional[str] = None
-    localite: Optional[str] = None
+    username:     str
+    mot_de_passe: str
+    nom:          Optional[str] = None
+    prenom:       Optional[str] = None
+    nom_elevage:  Optional[str] = None
+    telephone:    Optional[str] = None
+    localite:     Optional[str] = None
 
 class LoginIn(BaseModel):
-    email: str; mot_de_passe: str
+    username:     str
+    mot_de_passe: str
 
 class ProfileIn(BaseModel):
     nom: Optional[str] = None; prenom: Optional[str] = None
@@ -142,28 +150,35 @@ class ProfileIn(BaseModel):
 
 @app.post("/api/auth/register")
 def register(body: RegisterIn):
-    existing = qry("SELECT id FROM utilisateurs WHERE email=%s", (body.email,))
+    existing = qry("SELECT id FROM utilisateurs WHERE username=%s", (body.username,))
     if existing:
-        raise HTTPException(400, "Email déjà utilisé")
+        raise HTTPException(400, "Nom d'utilisateur déjà utilisé")
     user_id = exe(
-        "INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, nom_elevage, telephone, localite) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-        (body.nom, body.prenom, body.email, hash_pwd(body.mot_de_passe), body.nom_elevage, body.telephone, body.localite)
+        """INSERT INTO utilisateurs
+           (username, mot_de_passe, nom, prenom, nom_elevage, telephone, localite)
+           VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+        (body.username, hash_pwd(body.mot_de_passe),
+         body.nom, body.prenom, body.nom_elevage,
+         body.telephone, body.localite)
     )
     token = make_token()
     exe("INSERT INTO tokens (token, user_id) VALUES (%s,%s)", (token, user_id))
-    user = qry("SELECT id, nom, prenom, email, nom_elevage, telephone, localite, role, created_at FROM utilisateurs WHERE id=%s", (user_id,))[0]
+    user = qry("SELECT id,username,nom,prenom,nom_elevage,telephone,localite,role FROM utilisateurs WHERE id=%s", (user_id,))[0]
     return {"token": token, "user": user}
 
 @app.post("/api/auth/login")
 def login(body: LoginIn):
-    rows = qry("SELECT * FROM utilisateurs WHERE email=%s AND mot_de_passe=%s", (body.email, hash_pwd(body.mot_de_passe)))
+    # ← le bug était ici : queryait body.email qui n'existait pas
+    rows = qry(
+        "SELECT * FROM utilisateurs WHERE username=%s AND mot_de_passe=%s",
+        (body.username, hash_pwd(body.mot_de_passe))
+    )
     if not rows:
-        raise HTTPException(401, "Email ou mot de passe incorrect")
+        raise HTTPException(401, "Nom d'utilisateur ou mot de passe incorrect")
     user = rows[0]
     token = make_token()
     exe("INSERT INTO tokens (token, user_id) VALUES (%s,%s)", (token, user["id"]))
-    safe = {k: v for k, v in user.items() if k != "mot_de_passe"}
-    return {"token": token, "user": safe}
+    return {"token": token, "user": {k:v for k,v in user.items() if k != "mot_de_passe"}}
 
 @app.get("/api/auth/me")
 def me(authorization: str = Header(None)):
