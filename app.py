@@ -10,12 +10,9 @@ from pydantic import BaseModel
 from typing import Optional
 import mysql.connector
 import os, re, json, httpx, hashlib, secrets
-from dotenv import load_dotenv 
-
-load_dotenv()
+from datetime import date
 
 app = FastAPI(title="BoviBot API", version="2.0.0")
-
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # ── Config ─────────────────────────────────────────────────
@@ -89,14 +86,25 @@ Fonctions : fn_age_en_mois(animal_id), fn_gmq(animal_id)
 Procédures : sp_enregistrer_pesee(animal_id, poids_kg, date, agent), sp_declarer_vente(animal_id, acheteur, telephone, prix_fcfa, poids_vente_kg, date_vente)
 """
 
-SYSTEM_PROMPT = f"""Tu es BoviBot, assistant IA d'un élevage bovin.
+SYSTEM_PROMPT = f"""Tu es BoviBot, assistant IA d'un élevage bovin au Sénégal. Tu parles directement à l'éleveur en français clair et chaleureux.
 {DB_SCHEMA}
-Réponds TOUJOURS en JSON :
-Consultation : {{"type":"query","sql":"SELECT ...","explication":"..."}}
-Action pesée : {{"type":"action","action":"sp_enregistrer_pesee","params":{{"animal_id":1,"poids_kg":320.5,"date":"2026-03-27","agent":"BoviBot"}},"confirmation":"Résumé"}}
-Action vente : {{"type":"action","action":"sp_declarer_vente","params":{{"animal_id":1,"acheteur":"Nom","telephone":"","prix_fcfa":450000,"poids_vente_kg":310.0,"date_vente":"2026-03-27"}},"confirmation":"Résumé"}}
-Info : {{"type":"info","explication":"..."}}
-RÈGLES : SELECT uniquement (LIMIT 100), utiliser fn_age_en_mois() et fn_gmq() si pertinent, dates YYYY-MM-DD, confirmation obligatoire avant action.
+Réponds TOUJOURS en JSON valide :
+
+Consultation : {{"type":"query","sql":"SELECT ...","explication":"Réponse conversationnelle à afficher à l'éleveur — PAS le SQL, mais une vraie réponse humaine. Exemple : 'Votre troupeau compte 7 animaux actifs : 3 mâles et 4 femelles. Le meilleur GMQ est celui de TAG-001 avec 0,52 kg/jour.' Formule les chiffres clairement, donne des insights utiles."}}
+
+Action pesée : {{"type":"action","action":"sp_enregistrer_pesee","params":{{"animal_id":1,"poids_kg":320.5,"date":"2026-03-27","agent":"BoviBot"}},"confirmation":"Je vais enregistrer une pesée de 320,5 kg pour TAG-001 (Baaba) le 27/03/2026. Confirmez-vous ?"}}
+
+Action vente : {{"type":"action","action":"sp_declarer_vente","params":{{"animal_id":1,"acheteur":"Nom","telephone":"","prix_fcfa":450000,"poids_vente_kg":310.0,"date_vente":"2026-03-27"}},"confirmation":"Je vais déclarer la vente de TAG-001 à Oumar Ba pour 450 000 FCFA le 27/03/2026. Confirmez-vous ?"}}
+
+Info : {{"type":"info","explication":"Réponse conversationnelle directe à l'éleveur."}}
+
+RÈGLES IMPORTANTES :
+- L'explication doit être une VRAIE réponse humaine, pas une description du SQL
+- Commence toujours par répondre directement à la question (ex: "Vous avez 3 veaux mâles actifs.")
+- Donne des insights et conseils quand c'est pertinent
+- Formate les chiffres : 450 000 FCFA, 0,52 kg/jour, 3 mois
+- SELECT uniquement (LIMIT 100), utiliser fn_age_en_mois() et fn_gmq() si pertinent
+- Dates YYYY-MM-DD, confirmation obligatoire avant toute action
 """
 
 async def ask_llm(question: str, history: list = []) -> dict:
@@ -130,17 +138,14 @@ def call_proc(name: str, params: dict):
 # AUTH
 # ══════════════════════════════════════════════════════════════
 class RegisterIn(BaseModel):
-    username:     str
-    mot_de_passe: str
-    nom:          Optional[str] = None
-    prenom:       Optional[str] = None
-    nom_elevage:  Optional[str] = None
-    telephone:    Optional[str] = None
-    localite:     Optional[str] = None
+    username: str; mot_de_passe: str
+    nom: Optional[str] = None; prenom: Optional[str] = None
+    nom_elevage: Optional[str] = None
+    telephone: Optional[str] = None
+    localite: Optional[str] = None
 
 class LoginIn(BaseModel):
-    username:     str
-    mot_de_passe: str
+    username: str; mot_de_passe: str
 
 class ProfileIn(BaseModel):
     nom: Optional[str] = None; prenom: Optional[str] = None
@@ -153,12 +158,8 @@ def register(body: RegisterIn):
     if existing:
         raise HTTPException(400, "Nom d'utilisateur déjà utilisé")
     user_id = exe(
-        """INSERT INTO utilisateurs
-           (username, mot_de_passe, nom, prenom, nom_elevage, telephone, localite)
-           VALUES (%s,%s,%s,%s,%s,%s,%s)""",
-        (body.username, hash_pwd(body.mot_de_passe),
-         body.nom, body.prenom, body.nom_elevage,
-         body.telephone, body.localite)
+        "INSERT INTO utilisateurs (username, mot_de_passe, nom, prenom, nom_elevage, telephone, localite) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+        (body.username, hash_pwd(body.mot_de_passe), body.nom, body.prenom, body.nom_elevage, body.telephone, body.localite)
     )
     token = make_token()
     exe("INSERT INTO tokens (token, user_id) VALUES (%s,%s)", (token, user_id))
@@ -167,7 +168,6 @@ def register(body: RegisterIn):
 
 @app.post("/api/auth/login")
 def login(body: LoginIn):
-    # ← le bug était ici : queryait body.email qui n'existait pas
     rows = qry(
         "SELECT * FROM utilisateurs WHERE username=%s AND mot_de_passe=%s",
         (body.username, hash_pwd(body.mot_de_passe))
@@ -219,7 +219,7 @@ class AnimalIn(BaseModel):
 
 @app.get("/api/animaux")
 def get_animaux(authorization: str = Header(None)):
-    user = get_user(authorization)
+    user = get_user(authorization)  # garde l'auth obligatoire
     return qry("""
         SELECT a.*, r.nom as race,
                fn_age_en_mois(a.id) as age_mois,
@@ -409,12 +409,15 @@ def get_ventes(authorization: str = Header(None)):
 # ══════════════════════════════════════════════════════════════
 @app.get("/api/dashboard")
 def dashboard(authorization: str = Header(None)):
-    opt_user(authorization)
+    user = opt_user(authorization)
+    uid = user["id"] if user else None
+    # Filtre par user si connecté, sinon stats globales
+    uf = f"AND (a.user_id = {uid} OR a.user_id IS NULL)" if uid else ""
     stats = {}
     for k, sql in {
-        "total_actifs":      "SELECT COUNT(*) n FROM animaux WHERE statut='actif'",
-        "femelles":          "SELECT COUNT(*) n FROM animaux WHERE statut='actif' AND sexe='F'",
-        "males":             "SELECT COUNT(*) n FROM animaux WHERE statut='actif' AND sexe='M'",
+        "total_actifs":      f"SELECT COUNT(*) n FROM animaux a WHERE a.statut='actif' {uf}",
+        "femelles":          f"SELECT COUNT(*) n FROM animaux a WHERE a.statut='actif' AND a.sexe='F' {uf}",
+        "males":             f"SELECT COUNT(*) n FROM animaux a WHERE a.statut='actif' AND a.sexe='M' {uf}",
         "en_gestation":      "SELECT COUNT(*) n FROM reproduction WHERE statut='en_gestation'",
         "alertes_actives":   "SELECT COUNT(*) n FROM alertes WHERE traitee=FALSE",
         "alertes_critiques": "SELECT COUNT(*) n FROM alertes WHERE traitee=FALSE AND niveau='critical'",

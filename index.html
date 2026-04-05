@@ -660,15 +660,24 @@ tbody tr:hover td{background:var(--parch)}
 <script>
 const API='http://localhost:8002';
 let token=localStorage.getItem('bb_token')||'';
-let currentUser=null,animauxList=[],animauxAll=[],chatHistory=[],pendingAction=null;
+let currentUser=null,chatHistory=[],pendingAction=null;
 let chartStatus=null,chartPoids=null;
+let dashInterval=null; // ← tracker l'interval
 
-// ── Erreurs humaines ──
+// ── HTTP avec gestion 401 auto ────────────────
+const h=(url,opts={})=>fetch(API+url,{...opts,headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`,...(opts.headers||{})}}).then(async r=>{
+  if(r.status===401){
+    // Session expirée → déconnexion propre
+    localStorage.removeItem('bb_token');token='';
+    document.getElementById('auth-screen').style.display='flex';
+    document.getElementById('app-screen').style.display='none';
+    throw new Error('Session expirée — reconnectez-vous.');
+  }
+  if(!r.ok){const e=await r.json();throw new Error(e.detail||'Erreur');}
+  return r.json();
+});
 const ERRS={'Non authentifié':'🔒 Session expirée — reconnectez-vous.','Token invalide':'🔒 Session invalide — reconnectez-vous.',"Nom d'utilisateur déjà utilisé":"👤 Ce nom d'utilisateur est pris. Choisissez-en un autre.",'Cet animal ne peut pas être vendu':'🚫 Impossible — animal déjà vendu, mort ou en quarantaine.'};
 function humanErr(msg){for(const[k,v]of Object.entries(ERRS))if(msg?.includes(k))return v;if(msg?.includes('1062'))return '⚠️ Ce numéro de tag existe déjà dans la base de données.';if(msg?.includes('1452'))return '🔗 Référence invalide — vérifiez Mère / Père.';if(msg?.includes('Failed to fetch'))return '🌐 Serveur inaccessible. Vérifiez que le backend tourne sur le port 8002.';if(msg?.includes('500'))return '⚙️ Erreur serveur. Consultez les logs du backend.';return msg||'Une erreur inattendue est survenue.';}
-
-// ── HTTP ──
-const h=(url,opts={})=>fetch(API+url,{...opts,headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`,...(opts.headers||{})}}).then(async r=>{if(!r.ok){const e=await r.json();throw new Error(e.detail||'Erreur');}return r.json();});
 
 // ── Toast stack ──
 function toast(msg,type='',dur=3500){const s=document.getElementById('toast-stack');const d=document.createElement('div');d.className=`toast-item ${type}`;const ico={success:'✅',error:'❌',warn:'⚠️','':`💬`};d.innerHTML=`<span class="t-ico">${ico[type]||'💬'}</span><div>${msg}</div>`;s.appendChild(d);setTimeout(()=>{d.style.animation='tOut .3s ease forwards';setTimeout(()=>d.remove(),300);},dur);}
@@ -692,10 +701,35 @@ function greet(user){const hr=new Date().getHours();const s=hr<12?'Bonjour':hr<1
 function switchTab(t){document.getElementById('tab-login').style.display=t==='login'?'':'none';document.getElementById('tab-register').style.display=t==='register'?'':'none';document.querySelectorAll('.auth-tab').forEach((el,i)=>el.classList.toggle('active',(i===0&&t==='login')||(i===1&&t==='register')));}
 async function doLogin(){const u=document.getElementById('l-user').value.trim(),p=document.getElementById('l-pwd').value,e=document.getElementById('login-err');e.style.display='none';if(!u||!p){e.textContent='Renseignez votre identifiant et mot de passe.';e.style.display='block';return;}try{const d=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,mot_de_passe:p})}).then(async r=>{if(!r.ok){const x=await r.json();throw new Error(x.detail);}return r.json();});token=d.token;localStorage.setItem('bb_token',token);initApp(d.user);}catch(err){e.textContent=humanErr(err.message);e.style.display='block';}}
 async function doRegister(){const e=document.getElementById('reg-err');e.style.display='none';const b={username:document.getElementById('r-user').value.trim(),mot_de_passe:document.getElementById('r-pwd').value,nom:document.getElementById('r-nom').value.trim()||null,prenom:document.getElementById('r-prenom').value.trim()||null,nom_elevage:document.getElementById('r-elevage').value.trim()||null,telephone:document.getElementById('r-tel').value.trim()||null,localite:document.getElementById('r-loc').value.trim()||null};if(!b.username||!b.mot_de_passe){e.textContent="Nom d'utilisateur et mot de passe obligatoires.";e.style.display='block';return;}if(b.mot_de_passe.length<6){e.textContent='Mot de passe : minimum 6 caractères.';e.style.display='block';return;}try{const d=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(async r=>{if(!r.ok){const x=await r.json();throw new Error(x.detail);}return r.json();});token=d.token;localStorage.setItem('bb_token',token);initApp(d.user);}catch(err){e.textContent=humanErr(err.message);e.style.display='block';}}
-async function doLogout(){try{await h('/api/auth/logout',{method:'POST'});}catch(e){}localStorage.removeItem('bb_token');token='';currentUser=null;document.getElementById('auth-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
+async function doLogout(){
+  try{await h('/api/auth/logout',{method:'POST'});}catch(e){}
+  // Reset tout — le prochain utilisateur ne verra pas les données du précédent
+  localStorage.removeItem('bb_token');
+  token=''; currentUser=null; animauxFull=[]; chatHistory=[]; pendingAction=null;
+  // Détruire les charts
+  if(dashInterval){clearInterval(dashInterval);dashInterval=null;}
+  if(chartStatus){chartStatus.destroy();chartStatus=null;}
+  if(chartPoids){chartPoids.destroy();chartPoids=null;}
+  // Vider le chat
+  document.getElementById('chat-box').innerHTML=`<div class="msg-row bot"><div class="msg-av av-bot">🐄</div><div><div class="msg-bbl">Bonjour ! Je suis <strong>BoviBot</strong>. Posez vos questions en langage naturel.</div><div class="msg-time">${now()}</div></div></div>`;
+  document.getElementById('chat-results').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('app-screen').style.display='none';
+}
 async function checkAuth(){if(!token)return;try{const u=await h('/api/auth/me');initApp(u);}catch(e){localStorage.removeItem('bb_token');token='';}}
 
-function initApp(user){currentUser=user;document.getElementById('auth-screen').style.display='none';document.getElementById('app-screen').style.display='block';document.getElementById('sb-av').textContent=(user.username?.[0]||'U').toUpperCase();document.getElementById('sb-uname').textContent=user.username;document.getElementById('sb-urole').textContent=user.nom_elevage||'Élevage';greet(user);loadTip();loadDashboard();loadAnimaux();setInterval(loadDashboard,30000);}
+function initApp(user){
+  currentUser=user;
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+  document.getElementById('sb-av').textContent=(user.username?.[0]||'U').toUpperCase();
+  document.getElementById('sb-uname').textContent=user.username;
+  document.getElementById('sb-urole').textContent=user.nom_elevage||'Élevage';
+  greet(user);loadTip();loadDashboard();loadAnimaux();
+  // Annuler l'ancien interval avant d'en créer un nouveau
+  if(dashInterval) clearInterval(dashInterval);
+  dashInterval=setInterval(loadDashboard,30000);
+}
 
 // ── Nav ──
 const PG={dashboard:['Tableau de bord',"Vue d'ensemble",null],chat:['Assistant IA','Langage naturel · MySQL live',null],animaux:['Animaux','Gestion du troupeau','Ajouter un animal'],sante:['Santé','Suivi sanitaire','Ajouter un acte'],reproduction:['Reproduction','Gestations & vêlages','Enregistrer gestation'],ventes:['Ventes','Historique','Déclarer une vente'],alertes:['Alertes','Toutes les alertes',null],profil:['Mon profil','Vos informations',null]};
@@ -758,8 +792,41 @@ async function saveVente(){const b={animal_id:parseInt(document.getElementById('
 }
 
 // ── Profil ──
-async function loadProfile(){if(!currentUser)return;const u=currentUser;document.getElementById('prof-av').textContent=(u.username?.[0]||'U').toUpperCase();document.getElementById('prof-name').textContent=u.prenom&&u.nom?`${u.prenom} ${u.nom}`:u.username;document.getElementById('prof-info').textContent=`@${u.username}${u.localite?' · '+u.localite:''}`;document.getElementById('prof-elevage').textContent=u.nom_elevage?'🌾 '+u.nom_elevage:'';['p-prenom','p-nom','p-elevage','p-tel','p-loc'].forEach(id=>{const key=id.replace('p-','');const map={prenom:'prenom',nom:'nom',elevage:'nom_elevage',tel:'telephone',loc:'localite'};document.getElementById(id).value=u[map[key]]||'';});}
-async function saveProfile(){const b={prenom:document.getElementById('p-prenom').value.trim()||null,nom:document.getElementById('p-nom').value.trim()||null,nom_elevage:document.getElementById('p-elevage').value.trim()||null,telephone:document.getElementById('p-tel').value.trim()||null,localite:document.getElementById('p-loc').value.trim()||null};try{await h('/api/auth/profile',{method:'PUT',body:JSON.stringify(b)});currentUser={...currentUser,...b};initApp(currentUser);toast('Profil mis à jour.','success');}catch(e){toast(humanErr(e.message),'error');}}
+async function loadProfile(){
+  try {
+    // Toujours fetcher depuis le serveur — jamais depuis le cache local
+    const u = await h('/api/auth/me');
+    currentUser = u; // Mettre à jour le cache avec les vraies données serveur
+    document.getElementById('prof-av').textContent=(u.username?.[0]||'U').toUpperCase();
+    document.getElementById('prof-name').textContent=u.prenom&&u.nom?`${u.prenom} ${u.nom}`:u.username;
+    document.getElementById('prof-info').textContent=`@${u.username}${u.localite?' · '+u.localite:''}`;
+    document.getElementById('prof-elevage').textContent=u.nom_elevage?'🌾 '+u.nom_elevage:'';
+    ['p-prenom','p-nom','p-elevage','p-tel','p-loc'].forEach(id=>{
+      const map={prenom:'prenom',nom:'nom',elevage:'nom_elevage',tel:'telephone',loc:'localite'};
+      document.getElementById(id).value=u[map[id.replace('p-','')]]||'';
+    });
+  } catch(e) { toast(humanErr(e.message),'error'); }
+}
+async function saveProfile(){
+  const b={
+    prenom:document.getElementById('p-prenom').value.trim()||null,
+    nom:document.getElementById('p-nom').value.trim()||null,
+    nom_elevage:document.getElementById('p-elevage').value.trim()||null,
+    telephone:document.getElementById('p-tel').value.trim()||null,
+    localite:document.getElementById('p-loc').value.trim()||null
+  };
+  try{
+    await h('/api/auth/profile',{method:'PUT',body:JSON.stringify(b)});
+    // Recharger depuis le serveur — pas depuis le cache
+    const fresh = await h('/api/auth/me');
+    currentUser = fresh;
+    // Mettre à jour juste la sidebar, pas réinitialiser toute l'app
+    document.getElementById('sb-urole').textContent=fresh.nom_elevage||'Élevage';
+    // Recharger l'affichage du profil
+    await loadProfile();
+    toast('Profil mis à jour avec succès.','success');
+  }catch(e){ toast(humanErr(e.message),'error'); }
+}
 
 // ── Chat ──
 function now(){return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
@@ -770,7 +837,7 @@ async function confirmChat(yes){document.getElementById('chat-confirm')?.remove(
 async function sendChat(){const inp=document.getElementById('chat-in');const q=inp.value.trim();if(!q)return;inp.value='';addMsg('user',q);chatHistory.push({role:'user',content:q});const L=addTyping();document.getElementById('chat-results').style.display='none';
   try{const d=await h('/api/chat',{method:'POST',body:JSON.stringify({question:q,history:chatHistory.slice(-6)})});L.remove();
     if(d.type==='action_pending'){pendingAction=d.pending_action;const box=document.getElementById('chat-box');const el=document.createElement('div');el.id='chat-confirm';el.className='msg-row confirm-msg';el.innerHTML=`<div class="msg-av av-bot">🐄</div><div><div class="msg-bbl">⚠️ <strong>Confirmation requise</strong><br><br>${d.confirmation}<div class="confirm-row"><button class="btn-yes" onclick="confirmChat(true)">✅ Confirmer</button><button class="btn-no" onclick="confirmChat(false)">❌ Annuler</button></div></div><div class="msg-time">${now()}</div></div>`;box.appendChild(el);box.scrollTop=box.scrollHeight;}
-    else{const cnt=d.count!=null?` <span style="font-size:.7rem;opacity:.6">(${d.count} résultat${d.count>1?'s':''})</span>`:'';addMsg('bot',(d.answer||'')+cnt,d.sql);chatHistory.push({role:'assistant',content:d.answer||''});}
+    else{const cnt=d.count!=null?` <span style="font-size:.7rem;opacity:.6">(${d.count} résultat${d.count>1?'s':''})</span>`:'';addMsg('bot',(d.answer||'')+cnt);chatHistory.push({role:'assistant',content:d.answer||''});}
     if(d.data?.length>0){const s=document.getElementById('chat-results');s.style.display='block';document.getElementById('res-count').textContent=d.data.length+' ligne'+(d.data.length>1?'s':'');const keys=Object.keys(d.data[0]);document.getElementById('res-thead').innerHTML='<tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr>';document.getElementById('res-tbody').innerHTML=d.data.map(row=>'<tr>'+keys.map(k=>`<td>${row[k]??''}</td>`).join('')+'</tr>').join('');}
   }catch(e){L.remove();addMsg('bot','❌ '+humanErr(e.message));}
 }
