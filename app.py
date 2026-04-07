@@ -12,12 +12,19 @@ import mysql.connector
 import os, re, json, httpx, hashlib, secrets
 from datetime import date
 from dotenv import load_dotenv 
+from fastapi.responses import FileResponse
 
 load_dotenv()
 
 
+
 app = FastAPI(title="BoviBot API", version="2.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+@app.get("/")
+def read_root():
+    # Remplace "index.html" par le bon chemin si ton fichier est dans un dossier "static"
+    return FileResponse("index.html")
 
 # ── Config ─────────────────────────────────────────────────
 DB_CONFIG = {
