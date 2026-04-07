@@ -231,12 +231,13 @@ class AnimalIn(BaseModel):
 
 @app.get("/api/animaux")
 def get_animaux(authorization: str = Header(None)):
-    user = get_user(authorization)  # garde l'auth obligatoire
+    user = get_user(authorization)
     return qry("""
         SELECT a.*, r.nom as race,
-               fn_age_en_mois(a.id) as age_mois,
-               fn_gmq(a.id) as gmq_kg_jour,
-               m.numero_tag as mere_tag, p.numero_tag as pere_tag
+               TIMESTAMPDIFF(MONTH, a.date_naissance, CURDATE()) AS age_mois,
+               -- fn_gmq(a.id) AS gmq_kg_jour, <-- à remplacer si tu veux
+               m.numero_tag AS mere_tag,
+               p.numero_tag AS pere_tag
         FROM animaux a
         LEFT JOIN races r ON a.race_id = r.id
         LEFT JOIN animaux m ON a.mere_id = m.id
