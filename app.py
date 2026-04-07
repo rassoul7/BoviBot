@@ -25,6 +25,7 @@ DB_CONFIG = {
     "user":     os.getenv("DB_USER", "bovibot"),
     "password": os.getenv("DB_PASSWORD", "bovibot123"),
     "database": os.getenv("DB_NAME", "bovibot"),
+    "port":     int(os.getenv("DB_PORT", 3306)), 
 }
 LLM_API_KEY  = os.getenv("OPENAI_API_KEY", "")
 LLM_MODEL    = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
