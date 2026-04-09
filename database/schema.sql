@@ -1,15 +1,12 @@
 -- ============================================================
---  BoviBot — Base de données MySQL + PL/SQL
---  Projet L3 — ESP/UCAD
---  Gestion d'élevage bovin avec assistant IA
+--  BoviBot — Base de données MySQL + PL/SQL (Version Railway LDC)
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS bovibot CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE bovibot;
+SET FOREIGN_KEY_CHECKS = 0;
 
 -- ─── TABLES ──────────────────────────────────────────────────
 
-CREATE TABLE races (
+CREATE TABLE IF NOT EXISTS races (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
     origine VARCHAR(100),
@@ -17,7 +14,28 @@ CREATE TABLE races (
     production_lait_litre_jour DECIMAL(6,2) DEFAULT 0
 );
 
-CREATE TABLE animaux (
+CREATE TABLE IF NOT EXISTS utilisateurs (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    nom          VARCHAR(100),
+    prenom       VARCHAR(100),
+    username     VARCHAR(100) NOT NULL UNIQUE,
+    email        VARCHAR(150) NULL,
+    mot_de_passe VARCHAR(255) NOT NULL,
+    nom_elevage  VARCHAR(200),
+    telephone    VARCHAR(20),
+    localite     VARCHAR(100),
+    role         ENUM('admin','eleveur') DEFAULT 'eleveur',
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tokens (
+    token      VARCHAR(64) PRIMARY KEY,
+    user_id    INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS animaux (
     id INT AUTO_INCREMENT PRIMARY KEY,
     numero_tag VARCHAR(30) NOT NULL UNIQUE,
     nom VARCHAR(100),
@@ -28,14 +46,16 @@ CREATE TABLE animaux (
     statut ENUM('actif','vendu','mort','quarantaine') DEFAULT 'actif',
     mere_id INT NULL,
     pere_id INT NULL,
+    user_id INT NULL,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (race_id) REFERENCES races(id),
     FOREIGN KEY (mere_id) REFERENCES animaux(id),
-    FOREIGN KEY (pere_id) REFERENCES animaux(id)
+    FOREIGN KEY (pere_id) REFERENCES animaux(id),
+    FOREIGN KEY (user_id) REFERENCES utilisateurs(id)
 );
 
-CREATE TABLE pesees (
+CREATE TABLE IF NOT EXISTS pesees (
     id INT AUTO_INCREMENT PRIMARY KEY,
     animal_id INT NOT NULL,
     poids_kg DECIMAL(6,2) NOT NULL,
@@ -46,7 +66,7 @@ CREATE TABLE pesees (
     FOREIGN KEY (animal_id) REFERENCES animaux(id)
 );
 
-CREATE TABLE sante (
+CREATE TABLE IF NOT EXISTS sante (
     id INT AUTO_INCREMENT PRIMARY KEY,
     animal_id INT NOT NULL,
     type ENUM('vaccination','traitement','examen','chirurgie') NOT NULL,
@@ -60,7 +80,7 @@ CREATE TABLE sante (
     FOREIGN KEY (animal_id) REFERENCES animaux(id)
 );
 
-CREATE TABLE reproduction (
+CREATE TABLE IF NOT EXISTS reproduction (
     id INT AUTO_INCREMENT PRIMARY KEY,
     mere_id INT NOT NULL,
     pere_id INT NOT NULL,
@@ -74,7 +94,7 @@ CREATE TABLE reproduction (
     FOREIGN KEY (pere_id) REFERENCES animaux(id)
 );
 
-CREATE TABLE alimentation (
+CREATE TABLE IF NOT EXISTS alimentation (
     id INT AUTO_INCREMENT PRIMARY KEY,
     animal_id INT NOT NULL,
     type_aliment VARCHAR(100) NOT NULL,
@@ -84,7 +104,7 @@ CREATE TABLE alimentation (
     FOREIGN KEY (animal_id) REFERENCES animaux(id)
 );
 
-CREATE TABLE ventes (
+CREATE TABLE IF NOT EXISTS ventes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     animal_id INT NOT NULL,
     acheteur VARCHAR(150) NOT NULL,
@@ -97,7 +117,7 @@ CREATE TABLE ventes (
     FOREIGN KEY (animal_id) REFERENCES animaux(id)
 );
 
-CREATE TABLE alertes (
+CREATE TABLE IF NOT EXISTS alertes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     animal_id INT NULL,
     type ENUM('poids','vaccination','velage','sante','alimentation','autre') NOT NULL,
@@ -108,7 +128,7 @@ CREATE TABLE alertes (
     FOREIGN KEY (animal_id) REFERENCES animaux(id)
 );
 
-CREATE TABLE historique_statut (
+CREATE TABLE IF NOT EXISTS historique_statut (
     id INT AUTO_INCREMENT PRIMARY KEY,
     animal_id INT NOT NULL,
     ancien_statut VARCHAR(20),
@@ -119,9 +139,19 @@ CREATE TABLE historique_statut (
 
 -- ─── PROCÉDURES STOCKÉES ──────────────────────────────────────
 
+-- Suppression préalable pour éviter les erreurs si on relance
+DROP PROCEDURE IF EXISTS sp_enregistrer_pesee;
+DROP PROCEDURE IF EXISTS sp_declarer_vente;
+DROP FUNCTION IF EXISTS fn_age_en_mois;
+DROP FUNCTION IF EXISTS fn_gmq;
+DROP TRIGGER IF EXISTS trg_historique_statut;
+DROP TRIGGER IF EXISTS trg_alerte_vaccination;
+DROP TRIGGER IF EXISTS trg_alerte_poids_faible;
+DROP TRIGGER IF EXISTS trg_alerte_perte_poids;
+DROP TRIGGER IF EXISTS trg_info_vente;
+
 DELIMITER $$
 
--- Procédure : enregistrer une pesée + mettre à jour poids_actuel
 CREATE PROCEDURE sp_enregistrer_pesee(
     IN p_animal_id INT,
     IN p_poids_kg  DECIMAL(6,2),
@@ -133,14 +163,11 @@ BEGIN
     DECLARE v_jours INT;
     DECLARE v_gmq   DECIMAL(6,2);
 
-    -- Insérer la pesée
     INSERT INTO pesees (animal_id, poids_kg, date_pesee, agent)
     VALUES (p_animal_id, p_poids_kg, p_date, p_agent);
 
-    -- Mettre à jour le poids actuel de l'animal
     UPDATE animaux SET poids_actuel = p_poids_kg WHERE id = p_animal_id;
 
-    -- Vérifier le GMQ (gain moyen quotidien)
     SELECT poids_kg, DATEDIFF(p_date, date_pesee)
     INTO v_derniere_pesee, v_jours
     FROM pesees
@@ -151,7 +178,6 @@ BEGIN
 
     IF v_derniere_pesee IS NOT NULL AND v_jours > 0 THEN
         SET v_gmq = (p_poids_kg - v_derniere_pesee) / v_jours;
-        -- Alerte si GMQ < 300g/jour
         IF v_gmq < 0.3 THEN
             INSERT INTO alertes (animal_id, type, message, niveau)
             VALUES (p_animal_id, 'poids',
@@ -161,7 +187,6 @@ BEGIN
     END IF;
 END$$
 
--- Procédure : déclarer une vente
 CREATE PROCEDURE sp_declarer_vente(
     IN p_animal_id   INT,
     IN p_acheteur    VARCHAR(150),
@@ -171,7 +196,6 @@ CREATE PROCEDURE sp_declarer_vente(
     IN p_date_vente  DATE
 )
 BEGIN
-    -- Vérifier que l'animal est actif
     DECLARE v_statut VARCHAR(20);
     SELECT statut INTO v_statut FROM animaux WHERE id = p_animal_id;
 
@@ -180,17 +204,14 @@ BEGIN
             SET MESSAGE_TEXT = 'Cet animal ne peut pas être vendu (statut non actif)';
     END IF;
 
-    -- Enregistrer la vente
     INSERT INTO ventes (animal_id, acheteur, telephone_acheteur, date_vente, poids_vente_kg, prix_fcfa)
     VALUES (p_animal_id, p_acheteur, p_telephone, p_date_vente, p_poids_vente, p_prix);
 
-    -- Changer le statut de l'animal
     UPDATE animaux SET statut = 'vendu' WHERE id = p_animal_id;
 END$$
 
 -- ─── FONCTIONS ────────────────────────────────────────────────
 
--- Fonction : âge en mois
 CREATE FUNCTION fn_age_en_mois(p_animal_id INT)
 RETURNS INT
 READS SQL DATA
@@ -200,7 +221,6 @@ BEGIN
     RETURN TIMESTAMPDIFF(MONTH, v_date_naissance, CURDATE());
 END$$
 
--- Fonction : gain moyen quotidien (GMQ) sur toutes les pesées
 CREATE FUNCTION fn_gmq(p_animal_id INT)
 RETURNS DECIMAL(6,3)
 READS SQL DATA
@@ -228,7 +248,6 @@ END$$
 
 -- ─── TRIGGERS ─────────────────────────────────────────────────
 
--- Trigger : log changement de statut
 CREATE TRIGGER trg_historique_statut
 BEFORE UPDATE ON animaux
 FOR EACH ROW
@@ -239,7 +258,6 @@ BEGIN
     END IF;
 END$$
 
--- Trigger : alerte vaccination dépassée
 CREATE TRIGGER trg_alerte_vaccination
 AFTER INSERT ON sante
 FOR EACH ROW
@@ -252,14 +270,12 @@ BEGIN
     END IF;
 END$$
 
--- Trigger : alerte poids faible à l'insertion de pesée (complémentaire à la procédure)
 CREATE TRIGGER trg_alerte_poids_faible
 AFTER INSERT ON pesees
 FOR EACH ROW
 BEGIN
     DECLARE v_age_mois INT;
     SELECT fn_age_en_mois(NEW.animal_id) INTO v_age_mois;
-    -- Bovin de moins de 6 mois : poids < 60 kg = alerte
     IF v_age_mois <= 6 AND NEW.poids_kg < 60 THEN
         INSERT INTO alertes (animal_id, type, message, niveau)
         VALUES (NEW.animal_id, 'poids',
@@ -268,7 +284,6 @@ BEGIN
     END IF;
 END$$
 
--- 1. Alerte perte de poids
 CREATE TRIGGER trg_alerte_perte_poids
 AFTER INSERT ON pesees
 FOR EACH ROW
@@ -285,7 +300,6 @@ BEGIN
     END IF;
 END$$
 
--- 2. Alerte vente enregistrée
 CREATE TRIGGER trg_info_vente
 AFTER INSERT ON ventes
 FOR EACH ROW
@@ -299,12 +313,16 @@ END$$
 DELIMITER ;
 
 -- ─── EVENTS (MySQL Event Scheduler) ──────────────────────────
+-- Note: Sur Railway, SET GLOBAL peut générer une erreur "Access Denied".
+-- C'est pourquoi la ligne ci-dessous est commentée.
+-- SET GLOBAL event_scheduler = ON;
 
-SET GLOBAL event_scheduler = ON;
+DROP EVENT IF EXISTS evt_alerte_velages;
+DROP EVENT IF EXISTS evt_rapport_croissance;
+DROP EVENT IF EXISTS evt_alerte_pesee_manquante;
 
 DELIMITER $$
 
--- Event quotidien : alertes vêlages dans les 7 prochains jours
 CREATE EVENT evt_alerte_velages
 ON SCHEDULE EVERY 1 DAY
 STARTS CURRENT_TIMESTAMP
@@ -326,7 +344,6 @@ BEGIN
       );
 END$$
 
--- Event hebdomadaire : rapport croissance (insère une alerte globale résumée)
 CREATE EVENT evt_rapport_croissance
 ON SCHEDULE EVERY 1 WEEK
 STARTS CURRENT_TIMESTAMP
@@ -369,23 +386,30 @@ DELIMITER ;
 
 -- ─── DONNÉES DE TEST ──────────────────────────────────────────
 
-INSERT INTO races (nom, origine, poids_adulte_moyen_kg, production_lait_litre_jour) VALUES
-('Zébu Gobra',   'Sénégal',   350.00, 3.5),
-('Ndama',        'Guinée',    250.00, 2.0),
-('Holstein',     'Europe',    650.00, 25.0),
-('Jersiaise',    'Jersey',    400.00, 20.0);
+-- On vide les tables avant d'insérer pour éviter les doublons si relancé
+TRUNCATE TABLE alimentation;
+TRUNCATE TABLE reproduction;
+TRUNCATE TABLE sante;
+TRUNCATE TABLE pesees;
+TRUNCATE TABLE animaux;
+TRUNCATE TABLE races;
 
-INSERT INTO animaux (numero_tag, nom, race_id, sexe, date_naissance, poids_actuel, statut) VALUES
-('TAG-001', 'Baaba',  1, 'M', '2021-03-10', 320.00, 'actif'),
-('TAG-002', 'Yaye',   1, 'F', '2020-06-15', 280.00, 'actif'),
-('TAG-003', 'Samba',  2, 'M', '2022-01-20', 200.00, 'actif'),
-('TAG-004', 'Fatou',  2, 'F', '2021-09-05', 195.00, 'actif'),
-('TAG-005', 'Lait',   3, 'F', '2019-11-12', 580.00, 'actif'),
-('TAG-006', 'Veau1',  1, 'M', '2025-11-01', 85.00,  'actif'),
-('TAG-007', 'Veau2',  1, 'F', '2025-12-15', 72.00,  'actif');
+INSERT INTO races (id, nom, origine, poids_adulte_moyen_kg, production_lait_litre_jour) VALUES
+(1, 'Zébu Gobra',   'Sénégal',   350.00, 3.5),
+(2, 'Ndama',        'Guinée',    250.00, 2.0),
+(3, 'Holstein',     'Europe',    650.00, 25.0),
+(4, 'Jersiaise',    'Jersey',    400.00, 20.0);
 
--- Mise à jour parenté
-UPDATE animaux SET mere_id = 2, pere_id = 1 WHERE numero_tag IN ('TAG-006','TAG-007');
+INSERT INTO animaux (id, numero_tag, nom, race_id, sexe, date_naissance, poids_actuel, statut) VALUES
+(1, 'TAG-001', 'Baaba',  1, 'M', '2021-03-10', 320.00, 'actif'),
+(2, 'TAG-002', 'Yaye',   1, 'F', '2020-06-15', 280.00, 'actif'),
+(3, 'TAG-003', 'Samba',  2, 'M', '2022-01-20', 200.00, 'actif'),
+(4, 'TAG-004', 'Fatou',  2, 'F', '2021-09-05', 195.00, 'actif'),
+(5, 'TAG-005', 'Lait',   3, 'F', '2019-11-12', 580.00, 'actif'),
+(6, 'TAG-006', 'Veau1',  1, 'M', '2025-11-01', 85.00,  'actif'),
+(7, 'TAG-007', 'Veau2',  1, 'F', '2025-12-15', 72.00,  'actif');
+
+UPDATE animaux SET mere_id = 2, pere_id = 1 WHERE id IN (6, 7);
 
 INSERT INTO pesees (animal_id, poids_kg, date_pesee, agent) VALUES
 (1, 290.00, '2026-01-01', 'Ousmane Diallo'),
@@ -414,3 +438,4 @@ INSERT INTO alimentation (animal_id, type_aliment, quantite_kg, date_alimentatio
 (5, 'Concentre', 5.0, '2026-03-01', 350),
 (6, 'Lait maternel', 3.0, '2026-03-01', 0);
 
+SET FOREIGN_KEY_CHECKS = 1;
