@@ -313,6 +313,75 @@ tbody tr:hover td{background:var(--parch)}
 .t-ico{font-size:.9rem;flex-shrink:0;margin-top:1px}
 @keyframes tIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes tOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(40px)}}
+
+/* ========================================= */
+/* 📱 RESPONSIVITÉ - MOBILE ET TABLETTE 📱  */
+/* ========================================= */
+
+@media (max-width: 1024px) {
+    /* Tablette : on réduit les colonnes des grilles */
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .info-grid { grid-template-columns: 1fr; }
+    .tips-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    /* --- AUTHENTIFICATION --- */
+    .auth-screen { flex-direction: column; }
+    .auth-left { display: none; } /* Cache la grande déco sur mobile */
+    .auth-right { width: 100%; height: 100vh; padding: 2rem 1.5rem; justify-content: center; }
+
+    /* --- LAYOUT GLOBAL --- */
+    .app { display: block; height: 100vh; overflow: hidden; }
+    .main { height: calc(100vh - 65px - 57px); padding-bottom: 2rem; } /* Laisse la place au menu du bas */
+    .wrap { padding: 1.2rem 1rem; }
+
+    /* --- SIDEBAR -> DEVIENT UNE BARRE DE NAVIGATION EN BAS --- */
+    .sb { 
+        position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; 
+        flex-direction: row; border-top: 1px solid rgba(255,255,255,0.1);
+        z-index: 100;
+    }
+    .sb-top, .sb-user, .sb-conseil, .sb-foot, .sb-section { display: none !important; }
+    .nav { 
+        flex-direction: row; width: 100%; align-items: center; 
+        padding: 0; overflow-x: auto; white-space: nowrap; gap: 0;
+    }
+    .nav::-webkit-scrollbar { display: none; } /* Esthétique fluide */
+    .ni { 
+        flex-direction: column; align-items: center; gap: 4px; 
+        padding: 0.5rem 0.8rem; font-size: 0.65rem; border: none; 
+        border-top: 3px solid transparent; border-radius: 0; flex: 1;
+    }
+    .ni.active { background: rgba(255,255,255,0.05); border-left: none; border-top-color: var(--amber); }
+    .ni-ico { font-size: 1.3rem; margin: 0; }
+    .ni-badge { position: absolute; top: 5px; right: 5px; transform: scale(0.75); }
+
+    /* --- TOPBAR --- */
+    .topbar { padding: 0.8rem 1rem; }
+    .topbar-title { font-size: 1rem; }
+    .live-pill span { display: none; } /* Ne garde que le point clignotant sur mobile pour gagner de la place */
+
+    /* --- DASHBOARD --- */
+    .dash-hero { padding: 1.2rem; flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .dash-hero-cow { display: none; }
+    .quick-actions { flex-wrap: wrap; gap: 0.5rem; }
+    
+    /* --- GRILLES ET FORMULAIRES --- */
+    .stats-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+    .tips-row { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; gap: 0; }
+    
+    /* --- TABLEAUX --- */
+    .tbl-wrap { margin-bottom: 1rem; border: 1px solid var(--border); border-radius: var(--r-sm); }
+    
+    /* --- MODALS ET CHAT --- */
+    .modal { max-width: 92%; margin: auto; }
+    .msg-bbl { max-width: 90%; }
+    .chat-hd { padding: 0.8rem 1rem; }
+    .chat-msgs { padding: 1rem; }
+}
 </style>
 </head>
 <body>
